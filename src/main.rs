@@ -12,6 +12,7 @@ fn main() {
     let args = get_app().get_matches();
     let verbose = args.is_present("verbose");
     let register = args.is_present("register");
+    
     println_verbose!(verbose, "Verbose is active");
 }
 
