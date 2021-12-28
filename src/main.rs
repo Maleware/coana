@@ -1,5 +1,7 @@
 use clap::{App, Arg, ArgMatches};
 
+mod types;
+
 macro_rules! println_verbose {
     ($verbose:expr, $($arg:tt)*) => {
         if $verbose {

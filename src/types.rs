@@ -1,13 +1,17 @@
+use std::fmt;
+
+#[derive(Debug, Clone,Eq, PartialEq, Hash)]
 pub enum CardType{
-    Instant(Vec::new(SpellSubtype)),
-    Sorcery(Vec::new(SpellSubtype)),
-    Artifact(Vec::new(ArtifactSubtype)),
-    Creature(Vec::new(CreatureSubtype)),
-    Enchantment(Vec::new(EnchantmentSubtype)),
-    Land(Vec::new(LandSubtype)),
-    Planeswalker(Vec::new(PlaneswalkerSubtype)),
+    Instant(Vec<SpellSubtype>),
+    Sorcery(Vec<SpellSubtype>),
+    Artifact(Vec<ArtifactSubtype>),
+    Creature(Vec<CreatureSubtype>),
+    Enchantment(Vec<EnchantmentSubtype>),
+    Land(Vec<LandSubtype>),
+    Planeswalker,
     InvalidCardType,
 }
+#[derive(Debug, Clone,Eq, PartialEq, Hash)]
 pub enum ArtifactSubtype{
     Blood, 
     Clue, 
@@ -20,6 +24,7 @@ pub enum ArtifactSubtype{
     Vehicle,
     None,
 }
+#[derive(Debug, Clone,Eq, PartialEq, Hash)]
 pub enum SpellSubtype{
     Adventure, 
     Arcane, 
@@ -27,6 +32,7 @@ pub enum SpellSubtype{
     Trap,
     None,
 }
+#[derive(Debug, Clone,Eq, PartialEq, Hash)]
 pub enum CreatureSubtype{
 Advisor,
 Aetherborn,
@@ -290,6 +296,7 @@ Yeti,
 Zombie,
 Zubera,
 }
+#[derive(Debug, Clone,Eq, PartialEq, Hash)]
 pub enum EnchantmentSubtype{
     Aura, 
     Cartouche, 
@@ -301,6 +308,7 @@ pub enum EnchantmentSubtype{
     Shard,
     None,
 }
+#[derive(Debug, Clone,Eq, PartialEq, Hash)]
 pub enum LandSubtype{
     Plains, 
     Island, 
@@ -316,8 +324,22 @@ pub enum LandSubtype{
     UrzasTower,
     None,
 }
+#[derive(Debug, Clone,Eq, PartialEq, Hash)]
 pub enum Stats{
     Power(u8),
     Toughness(u8),
     Loyality(u8),
 }
+
+// use strum to iterate over enums later. You can check all enums in cards with .contains(enum.to_string())
+macro_rules! impl_fmt {
+    (for $($t:ty), +) => {
+        $(impl fmt::Display for $t {
+            fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+                write!(f, "{:?}", self)
+            }
+        })*
+    };
+}
+impl_fmt!(for CardType, ArtifactSubtype, SpellSubtype, CreatureSubtype, EnchantmentSubtype, LandSubtype);
+

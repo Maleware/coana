@@ -1,4 +1,4 @@
-use crate::types;
+mod types;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Card {
@@ -10,6 +10,4 @@ pub struct Card {
     pub stats: Vec::new(Stats),
     pub commander: bool,
     pub backside: Box<Option(Card)>
-
 }
-
