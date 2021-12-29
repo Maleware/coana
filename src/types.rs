@@ -1,5 +1,7 @@
-use std::fmt;
+use std::{fmt, error};
 use strum_macros::EnumIter;
+
+/************************************** Macros ***********************************************************/
 
 macro_rules! impl_fmt {
     (for $($t:ty), +) => {
@@ -11,19 +13,32 @@ macro_rules! impl_fmt {
     };
 }
 
-/************************************** Error's **********************************************************/
+/************************************** Errors **********************************************************/
+#[derive(Debug)]
+pub enum CEerror {
+    FailImportDeck(String),
+    APIError,
+    FetchValueError,
+    UnknownCardType,
+    CardNotFound,
+    ComboError,
+    HyperGeoFailed,
+}
+impl_fmt!(for CEerror);
+impl error::Error for CEerror {} 
 
+pub type CEResult<T> = Result<T, CEerror>;
 
 /********************************** Magic Card Types *****************************************************/
 
 #[derive(Debug, Clone,Eq, PartialEq, EnumIter)]
 pub enum CardType{
-    Instant(Vec<SpellSubtype>),
-    Sorcery(Vec<SpellSubtype>),
-    Artifact(Vec<ArtifactSubtype>),
-    Creature(Vec<CreatureSubtype>),
-    Enchantment(Vec<EnchantmentSubtype>),
-    Land(Vec<LandSubtype>),
+    Instant(Vec<Option<SpellSubtype>>),
+    Sorcery(Vec<Option<SpellSubtype>>),
+    Artifact(Vec<Option<ArtifactSubtype>>),
+    Creature(Vec<Option<CreatureSubtype>>),
+    Enchantment(Vec<Option<EnchantmentSubtype>>),
+    Land(Vec<Option<LandSubtype>>),
     Planeswalker,
     InvalidCardType,
 }
@@ -38,7 +53,6 @@ pub enum ArtifactSubtype{
     Gold, 
     Treasure, 
     Vehicle,
-    None,
 }
 #[derive(Debug, Clone,Eq, PartialEq, EnumIter)]
 pub enum SpellSubtype{
@@ -46,7 +60,6 @@ pub enum SpellSubtype{
     Arcane, 
     Lesson, 
     Trap,
-    None,
 }
 #[derive(Debug, Clone,Eq, PartialEq, EnumIter)]
 pub enum CreatureSubtype{
@@ -322,7 +335,6 @@ pub enum EnchantmentSubtype{
     Saga, 
     Shrine, 
     Shard,
-    None,
 }
 #[derive(Debug, Clone,Eq, PartialEq, EnumIter)]
 pub enum LandSubtype{
@@ -338,7 +350,6 @@ pub enum LandSubtype{
     UrzasMine, 
     UrzasPowerPlant, 
     UrzasTower,
-    None,
 }
 #[derive(Debug, Clone,Eq, PartialEq, EnumIter)]
 pub enum Stats{
@@ -355,9 +366,9 @@ impl_fmt!(for CardType, ArtifactSubtype, SpellSubtype, CreatureSubtype, Enchantm
 pub enum Keys{
     Exile,
     Destroy,
-    Bounce,
+    Return,
     Draw,
-    Regrowth,
+    Counter,
     Damage,
     Attach,
     Fight,
@@ -397,9 +408,9 @@ pub struct Card {
     pub zones: Option<Vec<Zones>>,
 }
 #[derive(Debug)]
-pub struct Deck {
+pub struct Deck <'a> {
     pub name: String,
-    pub commander: Card,
+    pub commander: &'a Card,
     pub library: Vec<(u8, Card)>,
 }
 
