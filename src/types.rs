@@ -1,6 +1,22 @@
 use std::fmt;
+use strum_macros::EnumIter;
 
-#[derive(Debug, Clone,Eq, PartialEq, Hash)]
+macro_rules! impl_fmt {
+    (for $($t:ty), +) => {
+        $(impl fmt::Display for $t {
+            fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+                write!(f, "{:?}", self)
+            }
+        })*
+    };
+}
+
+/************************************** Error's **********************************************************/
+
+
+/********************************** Magic Card Types *****************************************************/
+
+#[derive(Debug, Clone,Eq, PartialEq, EnumIter)]
 pub enum CardType{
     Instant(Vec<SpellSubtype>),
     Sorcery(Vec<SpellSubtype>),
@@ -11,7 +27,7 @@ pub enum CardType{
     Planeswalker,
     InvalidCardType,
 }
-#[derive(Debug, Clone,Eq, PartialEq, Hash)]
+#[derive(Debug, Clone,Eq, PartialEq, EnumIter)]
 pub enum ArtifactSubtype{
     Blood, 
     Clue, 
@@ -24,7 +40,7 @@ pub enum ArtifactSubtype{
     Vehicle,
     None,
 }
-#[derive(Debug, Clone,Eq, PartialEq, Hash)]
+#[derive(Debug, Clone,Eq, PartialEq, EnumIter)]
 pub enum SpellSubtype{
     Adventure, 
     Arcane, 
@@ -32,7 +48,7 @@ pub enum SpellSubtype{
     Trap,
     None,
 }
-#[derive(Debug, Clone,Eq, PartialEq, Hash)]
+#[derive(Debug, Clone,Eq, PartialEq, EnumIter)]
 pub enum CreatureSubtype{
 Advisor,
 Aetherborn,
@@ -296,7 +312,7 @@ Yeti,
 Zombie,
 Zubera,
 }
-#[derive(Debug, Clone,Eq, PartialEq, Hash)]
+#[derive(Debug, Clone,Eq, PartialEq, EnumIter)]
 pub enum EnchantmentSubtype{
     Aura, 
     Cartouche, 
@@ -308,7 +324,7 @@ pub enum EnchantmentSubtype{
     Shard,
     None,
 }
-#[derive(Debug, Clone,Eq, PartialEq, Hash)]
+#[derive(Debug, Clone,Eq, PartialEq, EnumIter)]
 pub enum LandSubtype{
     Plains, 
     Island, 
@@ -324,22 +340,67 @@ pub enum LandSubtype{
     UrzasTower,
     None,
 }
-#[derive(Debug, Clone,Eq, PartialEq, Hash)]
+#[derive(Debug, Clone,Eq, PartialEq, EnumIter)]
 pub enum Stats{
     Power(u8),
     Toughness(u8),
     Loyality(u8),
 }
 
-// use strum to iterate over enums later. You can check all enums in cards with .contains(enum.to_string())
-macro_rules! impl_fmt {
-    (for $($t:ty), +) => {
-        $(impl fmt::Display for $t {
-            fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-                write!(f, "{:?}", self)
-            }
-        })*
-    };
-}
 impl_fmt!(for CardType, ArtifactSubtype, SpellSubtype, CreatureSubtype, EnchantmentSubtype, LandSubtype);
 
+/*************************************** Keywords and Zones *************************************************/
+
+#[derive(Debug, Clone, Eq, PartialEq, EnumIter)]
+pub enum Keys{
+    Exile,
+    Destroy,
+    Bounce,
+    Draw,
+    Regrowth,
+    Damage,
+    Attach,
+    Fight,
+    Mill,
+    Sacrifice,
+    Scry,
+    Tap,
+    Untap,
+}
+
+#[derive(Debug, Clone, Eq, PartialEq, EnumIter)]
+pub enum Zones{
+    Battlefield,
+    Hand,
+    Exile,
+    Graveyard,
+    CommandZone,
+    Library,
+}
+
+impl_fmt!(for Keys, Zones);
+
+/************************************** Card and Deck ***************************************************/
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct Card {
+    pub cmc: f64,
+    pub mana_cost: String,
+    pub name: String,
+    pub cardtype: Vec<CardType>,
+    pub legendary: bool,
+    pub stats: Option<Vec<Stats>>,
+    pub commander: bool,
+    pub backside: Box<Option<Card>>,
+    pub oracle_text: String,
+    pub keys: Option<Vec<Keys>>, 
+    pub zones: Option<Vec<Zones>>,
+}
+#[derive(Debug)]
+pub struct Deck {
+    pub name: String,
+    pub commander: Card,
+    pub library: Vec<(u8, Card)>,
+}
+
+/********************************************************************************************************/
