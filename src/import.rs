@@ -18,12 +18,24 @@ pub mod user_import {
         Err(_) => return Err(CEerror::FailImportDeck(String::from("Can not read from path"))),
     }; 
 }
-    // Panics for corrupt lists
-    pub fn quantity_card(decklist: &String) -> CEResult<(String, String)> {
+    pub fn quantity_card(decklist: &String) -> CEResult<Vec<String>> {
     let mut qty_card  = decklist.splitn(2, " ");
-    
-    Ok( (qty_card.next().expect("Error splitting List-Value name").to_string(),
-    qty_card.next().expect("Error splitting List-Value integer").to_string()) )
+    let mut result = Vec::new();
+
+    match qty_card.next() {
+        Some(t) => {
+            result.push(t.to_string());
+            match qty_card.next() {
+                Some(t) => {
+                    result.push(t.to_string());
+                    return Ok(result);
+                },
+                None => return Err(CEerror::FailImportDeck(String::from("Error getting Cardname. Empty string"))),
+            }
+        },
+        None => return Err(CEerror::FailImportDeck(String::from("Error getting Quantity. Empty string"))),
+
+    }
 }
 
 // Still needed as fallback, make default *CMDR* in list.
@@ -52,7 +64,7 @@ pub mod scryfall {
     use serde_json::Value;
     use crate::types::{CEerror, CEResult};
 
-    pub fn request_card(cardname: &String) -> CEResult<String> {
+    pub fn get(cardname: &String) -> CEResult<String> {
 
         let request = match exact_request(cardname) {
             Ok(t) => {
@@ -145,16 +157,15 @@ pub mod scryfall {
         fuzzy_string.replace(" ", "+")
     }
 }
-
 /********************************** Combo Import ******************************************/
 pub mod combo {
     use reqwest::blocking;
     use crate::types::{CEResult, CEerror};
     use serde_json::Value;
 
-    pub fn make() -> CEResult<Vec<Vec<String>>> {
+    pub fn get() -> CEResult<Vec<Vec<String>>> {
         let mut result = Vec::new();
-        match get_combo() {
+        match request_combo() {
             Ok(t) => {
                 match combo_to_json(&t) {
                     Ok(t) => {
@@ -179,7 +190,7 @@ pub mod combo {
         Ok(result)
     }
 
-    fn get_combo() -> CEResult<String> {
+    fn request_combo() -> CEResult<String> {
 
         println!("Fetching available Combos...");
 

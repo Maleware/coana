@@ -377,6 +377,7 @@ pub enum Keys{
     Scry,
     Tap,
     Untap,
+    Discard,
 }
 
 #[derive(Debug, Clone, Eq, PartialEq, EnumIter)]
