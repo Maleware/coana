@@ -5,7 +5,7 @@ pub mod user_import {
 
     use crate::types::{CEerror, CEResult};
 
-    pub fn decklist_import(filename: String, verbose: bool) -> CEResult<Vec<String>>{
+    pub fn decklist(filename: String) -> CEResult<Vec<String>>{
     println!("Load decklist {}", filename);
 
     let path = format!("decks/{}", filename);
@@ -63,9 +63,9 @@ pub mod scryfall {
     use reqwest::blocking;
     use serde_json::Value;
     use crate::types::{CEerror, CEResult};
+    use std::{fs::File, io::prelude::*};
 
     pub fn get(cardname: &String) -> CEResult<String> {
-
         let request = match exact_request(cardname) {
             Ok(t) => {
                 let v: Value = serde_json::from_str(&t).expect("No string found in request_card");
@@ -85,8 +85,6 @@ pub mod scryfall {
         };
         request
     }
-    
-
     fn fuzzy_request(cardname: &String) -> CEResult<String> {
         let mut api = String::from("https://api.scryfall.com/cards/named?fuzzy=");
         api = format!("{}{}", api, make_fuzzy(cardname));
@@ -100,14 +98,11 @@ pub mod scryfall {
         };
         request
     }
-    
-
     fn exact_request(cardname: &String) -> CEResult<String> {
         let mut api = String::from("https://api.scryfall.com/cards/named?exact=");
         api = format!("{}, {}", api, *cardname);
     
-        let request = match
-            blocking::get(api) {
+        let request = match blocking::get(api) {
                 Ok(t) => match t.text() {
                     Ok(t) => Ok(t),
     
@@ -117,7 +112,6 @@ pub mod scryfall {
             };
         request
     }
-
     fn make_fuzzy(cardname: &String ) -> String {
 
         let mut fuzzy_string = String::new();
@@ -155,6 +149,58 @@ pub mod scryfall {
         }
     
         fuzzy_string.replace(" ", "+")
+    }
+    pub fn get_bulk() -> CEResult<()> {
+        let mut api = String::from("https://api.scryfall.com/bulk-data");
+
+        let request = match blocking::get(api) {
+            Ok(t) => match t.text() {
+                Ok(t) => {
+                    let v: Value = serde_json::from_str(&t).expect("Bulk-data frame was not retrieved");
+                    if v["code"] == "not_found".to_string() {
+                        println!("Bulk-Data temporally not available");
+                    }
+                    api = v["data"][0]["download_uri"].to_string().replace("\"", "");
+                    
+                    match blocking::get(api) {
+                        Ok(t) => match t.text() {
+                            Ok(t) => {
+                                let v: Value = serde_json::from_str(&t).expect("Bulk-Data can not be formated in json");
+                                if v["code"] == "not_found".to_string() {
+                                    println!("Bulk-Data temporally not available");
+                                }
+                                // think about a new module "data.rs" to store databank functions and later the statistics in it
+                                let mut database = t
+                                .trim()
+                                .split("}},")
+                                .flat_map(str::parse::<String>)
+                                .collect::<Vec<String>>();
+
+                                println!("Cards fetched from scryfall: {}", database.len());
+
+                                let mut file = match File::create("database.txt") {
+                                    Ok(t) => t,
+                                    Err(_) => return Err(CEerror::APIError),
+                                };
+
+                                for card in &database{
+                                    match file.write(card.as_bytes()) {
+                                        Ok(_) => return Ok(()),
+                                        Err(_) => return Err(CEerror::APIError),
+                                    }
+                                }
+                                Ok(())
+                            },
+                            Err(_) => Err(CEerror::APIError), 
+                        }
+                        Err(_) => Err(CEerror::APIError), 
+                    }
+                },
+                Err(_) => Err(CEerror::APIError),
+            }
+            Err(_) => Err(CEerror::APIError),
+        };
+        request
     }
 }
 /********************************** Combo Import ******************************************/

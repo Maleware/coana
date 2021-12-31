@@ -1,5 +1,8 @@
-use std::{fmt, error};
+use std::{fmt, error, sync::Arc };
 use strum_macros::EnumIter;
+use std::{thread, sync::mpsc};
+use crate::import::user_import;
+
 
 /************************************** Macros ***********************************************************/
 
@@ -12,7 +15,6 @@ macro_rules! impl_fmt {
         })*
     };
 }
-
 /************************************** Errors **********************************************************/
 #[derive(Debug)]
 pub enum CEerror {
@@ -360,7 +362,7 @@ pub enum Stats{
 
 impl_fmt!(for CardType, ArtifactSubtype, SpellSubtype, CreatureSubtype, EnchantmentSubtype, LandSubtype);
 
-/*************************************** Keywords and Zones *************************************************/
+/*************************************** Keywords, Zones and Colours *************************************/
 
 #[derive(Debug, Clone, Eq, PartialEq, EnumIter)]
 pub enum Keys{
@@ -389,14 +391,21 @@ pub enum Zones{
     CommandZone,
     Library,
 }
-
+#[derive(Debug, EnumIter)]
+pub enum Colours {
+    White,
+    Blue,
+    Black,
+    Red,
+    Green,
+}
 impl_fmt!(for Keys, Zones);
 
 /************************************** Card and Deck ***************************************************/
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Card {
-    pub cmc: f64,
+    pub cmc: f32,
     pub mana_cost: String,
     pub name: String,
     pub cardtype: Vec<CardType>,
@@ -408,11 +417,118 @@ pub struct Card {
     pub keys: Option<Vec<Keys>>, 
     pub zones: Option<Vec<Zones>>,
 }
-#[derive(Debug)]
-pub struct Deck <'a> {
+impl Card {
+    pub fn new() -> Card {
+        Card {
+            cmc: 0.0,
+            mana_cost: String::from(""),
+            name: String::from(""),
+            cardtype: vec![CardType::InvalidCardType],
+            legendary: false,
+            stats: None,
+            commander: false,
+            backside: Box::new(None),
+            oracle_text: String::from(""),
+            keys: None,
+            zones: None,
+         }
+     }
+    pub fn make(card: &String) -> CEResult<Card> {
+        use serde_json::Value;
+        
+        match serde_json::from_str(&card) {
+            Ok(t) => {
+                let v: Value = t;
+
+                //Check if card was found
+                if v["code"] == String::from("not_found") { 
+                    return Err(CEerror::CardNotFound);
+                } else {
+                    let mut card = Card::new();
+                    card.name = v["name"].to_string().replace("\"", "").replace("\\", "");
+                    return Ok(card);
+                }
+                
+
+            },
+            Err(_) => Err(CEerror::FetchValueError),
+        }
+
+
+     }
+}
+#[derive(Debug, Clone)]
+pub struct Deck{
     pub name: String,
-    pub commander: &'a Card,
+    pub commander: Vec<Card>,
     pub library: Vec<(u8, Card)>,
 }
+// Move this in new modul, together with databank managament and the statistics
+pub mod thread_fn {
+use std::{thread, sync::{mpsc, Arc}, time::Duration};
+use crate::import::{user_import::quantity_card, self};
+use crate::types::Card;
 
+    pub fn thread_card_make_api(decklist: &Arc<Vec<String>> , tx: &mpsc::Sender<(u8, Card)> , i: &usize) {
+        let quantity_card = quantity_card(&decklist[*i]).expect("Incompatible decklist format");
+        match import::scryfall::get(&quantity_card[1]) {
+            Ok(t) => {
+                match Card::make(&t) {
+                    Ok(t) => {
+                        println!("Fetched Card: {}", t.name);
+                        tx.send((0,t)).unwrap();
+                        thread::sleep(Duration::from_millis(50))
+                    },
+                    Err(e) => (),
+                }
+            },
+            Err(e) => (),
+        }
+    }
+    pub fn thread_card_make_database(){}
+}
+
+impl Deck {
+    pub fn make(input: String)-> CEResult<Deck>{
+        let mut index: u8 = 0; 
+        let mut deck = Deck{
+            name: String::from(&input),
+            commander: Vec::<Card>::new(),
+            library: Vec::<(u8, Card)>::new(),
+        };
+
+        match user_import::decklist(input) {
+            // Parallel import of Cards from API including build.
+            Ok(t) => {
+                let (tx, rx) = mpsc::channel();
+                let tx1 = tx.clone();
+                let tasks = Arc::new(t);
+                let tasks_arc_clone = Arc::clone(&tasks);
+
+                let mid_idx = tasks.len() / 2 - 1;
+                let handle = thread::spawn(move || {
+                    for i in 0..mid_idx{
+                        //TODO: Move to own function
+                        thread_fn::thread_card_make_api(&tasks_arc_clone, &tx, &i);
+                    }
+                });
+                
+                for i in mid_idx..tasks.len() {
+                    thread_fn::thread_card_make_api(&tasks, &tx1, &i); 
+                } 
+
+                drop(tx1);
+                
+                for card in rx {
+                    deck.library.push(card);
+                }
+                handle.join().expect("Can not join thread");
+                return Ok(deck);
+            },
+            Err(e) => return Err(e),
+        }
+    }  
+    fn load(identifier: String){}
+    fn save(deck: Deck){}
+}
 /********************************************************************************************************/

@@ -1,5 +1,6 @@
 use clap::{App, Arg, ArgMatches};
-use strum::IntoEnumIterator;
+
+use crate::types::Deck;
 
 mod types;
 mod import;
@@ -14,18 +15,29 @@ macro_rules! println_verbose {
 
 fn main() {
     let args = get_app().get_matches();
+    
+    let input = args.value_of("input").unwrap_or("Error");
     let verbose = args.is_present("verbose");
     let register = args.is_present("register");
-    
+
     println_verbose!(verbose, "Verbose is active");
-
-    for enums in types::CreatureSubtype::iter() {
-        println!("Enum: {}", enums.to_string());
+    
+    
+    match Deck::make(input.to_string()) {
+        Ok(t) => {
+            for card in &t.library {
+                println!("Card: {}", card.1.name);
+            }
+        },
+        Err(e) => println!("Error: {}", e),
     }
-
-    for zones in types::Zones::iter() {
-        println!("Zone: {}", zones.to_string());
+    
+    /*
+    match import::scryfall::get_bulk() {
+        Ok(()) => (),
+        Err(e) => println!("{}", e),
     }
+    */
 }
 
 fn get_app() -> App<'static, 'static>{
