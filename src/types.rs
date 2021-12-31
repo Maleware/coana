@@ -476,8 +476,8 @@ use crate::types::Card;
                 match Card::make(&t) {
                     Ok(t) => {
                         println!("Fetched Card: {}", t.name);
-                        tx.send((0,t)).unwrap();
-                        thread::sleep(Duration::from_millis(50))
+                        tx.send((*i as u8,t)).unwrap();
+                        thread::sleep(Duration::from_millis(10))
                     },
                     Err(e) => (),
                 }
@@ -502,27 +502,47 @@ impl Deck {
             Ok(t) => {
                 let (tx, rx) = mpsc::channel();
                 let tx1 = tx.clone();
-                let tasks = Arc::new(t);
-                let tasks_arc_clone = Arc::clone(&tasks);
+                let tx2 = tx.clone();
+                let tx3 = tx.clone();
 
-                let mid_idx = tasks.len() / 2 - 1;
-                let handle = thread::spawn(move || {
-                    for i in 0..mid_idx{
-                        //TODO: Move to own function
-                        thread_fn::thread_card_make_api(&tasks_arc_clone, &tx, &i);
+                let tasks = Arc::new(t);
+                let tasks_arc_clone1 = Arc::clone(&tasks);
+                let tasks_arc_clone2 = Arc::clone(&tasks);
+                let tasks_arc_clone3 = Arc::clone(&tasks);
+
+                let quater_one = tasks.len() / 4;
+                let quater_two = tasks.len() / 2;
+                let quater_three = 3 * tasks.len() / 4;
+
+                let handle1 = thread::spawn(move || {
+                    for i in 0..quater_one{ 
+                        thread_fn::thread_card_make_api(&tasks_arc_clone1, &tx, &i);
                     }
                 });
+                let handle2 = thread::spawn(move || { 
+                    for i in quater_one..quater_two {
+                        thread_fn::thread_card_make_api(&tasks_arc_clone2, &tx1, &i); 
+                    } 
+                });
+                let handle3 = thread::spawn(move || {
+                    for i in quater_two..quater_three {
+                        thread_fn::thread_card_make_api(&tasks_arc_clone3, &tx2, &i); 
+                    } 
+                });
                 
-                for i in mid_idx..tasks.len() {
-                    thread_fn::thread_card_make_api(&tasks, &tx1, &i); 
+                for i in quater_three..tasks.len() {
+                    thread_fn::thread_card_make_api(&tasks, &tx3, &i); 
                 } 
+                
 
-                drop(tx1);
+                drop(tx3);
                 
                 for card in rx {
                     deck.library.push(card);
                 }
-                handle.join().expect("Can not join thread");
+                handle1.join().expect("Can not join thread");
+                handle2.join().expect("Can not join thread");
+                handle3.join().expect("Can not join thread");
                 return Ok(deck);
             },
             Err(e) => return Err(e),

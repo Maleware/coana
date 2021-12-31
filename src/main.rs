@@ -25,19 +25,10 @@ fn main() {
     
     match Deck::make(input.to_string()) {
         Ok(t) => {
-            for card in &t.library {
-                println!("Card: {}", card.1.name);
-            }
+            println!("Deck length: {}", t.library.len());
         },
         Err(e) => println!("Error: {}", e),
     }
-    
-    /*
-    match import::scryfall::get_bulk() {
-        Ok(()) => (),
-        Err(e) => println!("{}", e),
-    }
-    */
 }
 
 fn get_app() -> App<'static, 'static>{
