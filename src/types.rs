@@ -1,8 +1,9 @@
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::{fmt, error, sync::Arc };
 use strum_macros::EnumIter;
 use std::{thread, sync::mpsc};
 use crate::import::user_import;
-
+use crate::logic::{thread_fn, database, self};
 
 /************************************** Macros ***********************************************************/
 
@@ -20,6 +21,7 @@ macro_rules! impl_fmt {
 pub enum CEerror {
     FailImportDeck(String),
     APIError,
+    DatabaseError,
     FetchValueError,
     UnknownCardType,
     CardNotFound,
@@ -435,6 +437,7 @@ impl Card {
      }
     pub fn make(card: &String) -> CEResult<Card> {
         use serde_json::Value;
+        use crate::logic::card_build;
         
         match serde_json::from_str(&card) {
             Ok(t) => {
@@ -463,34 +466,10 @@ pub struct Deck{
     pub commander: Vec<Card>,
     pub library: Vec<(u8, Card)>,
 }
-// Move this in new modul, together with databank managament and the statistics
-pub mod thread_fn {
-use std::{thread, sync::{mpsc, Arc}, time::Duration};
-use crate::import::{user_import::quantity_card, self};
-use crate::types::Card;
-
-    pub fn thread_card_make_api(decklist: &Arc<Vec<String>> , tx: &mpsc::Sender<(u8, Card)> , i: &usize) {
-        let quantity_card = quantity_card(&decklist[*i]).expect("Incompatible decklist format");
-        match import::scryfall::get(&quantity_card[1]) {
-            Ok(t) => {
-                match Card::make(&t) {
-                    Ok(t) => {
-                        println!("Fetched Card: {}", t.name);
-                        tx.send((*i as u8,t)).unwrap();
-                        thread::sleep(Duration::from_millis(10))
-                    },
-                    Err(e) => (),
-                }
-            },
-            Err(e) => (),
-        }
-    }
-    pub fn thread_card_make_database(){}
-}
-
 impl Deck {
     pub fn make(input: String)-> CEResult<Deck>{
-        let mut index: u8 = 0; 
+        use serde_json::Value;
+
         let mut deck = Deck{
             name: String::from(&input),
             commander: Vec::<Card>::new(),
@@ -498,7 +477,7 @@ impl Deck {
         };
 
         match user_import::decklist(input) {
-            // Parallel import of Cards from API including build.
+
             Ok(t) => {
                 let (tx, rx) = mpsc::channel();
                 let tx1 = tx.clone();
@@ -514,10 +493,21 @@ impl Deck {
                 let quater_two = tasks.len() / 2;
                 let quater_three = 3 * tasks.len() / 4;
 
+                // Gives empty vector into thread, function will not find a card and fallback to api request
+             
+                let data = logic::database::load().unwrap();   
+
+                let database_unwrap: Value = logic::database::load().unwrap();
+
+                let database = Arc::new(database_unwrap);
+                let database_arc_clone1 = Arc::clone(&database);
+                let database_arc_clone2 = Arc::clone(&database);
+                let database_arc_clone3 = Arc::clone(&database);
+
                 let handle1 = thread::spawn(move || {
-                    for i in 0..quater_one{ 
-                        thread_fn::thread_card_make_api(&tasks_arc_clone1, &tx, &i);
-                    }
+                    for i in 0..quater_one{
+                        thread_fn::thread_card_make_database(&tasks_arc_clone1, &tx, &i, &database_arc_clone1);
+                    }        
                 });
                 let handle2 = thread::spawn(move || { 
                     for i in quater_one..quater_two {
@@ -526,12 +516,12 @@ impl Deck {
                 });
                 let handle3 = thread::spawn(move || {
                     for i in quater_two..quater_three {
-                        thread_fn::thread_card_make_api(&tasks_arc_clone3, &tx2, &i); 
+                        thread_fn::thread_card_make_api(&tasks_arc_clone3, &tx2, &i);
                     } 
                 });
                 
                 for i in quater_three..tasks.len() {
-                    thread_fn::thread_card_make_api(&tasks, &tx3, &i); 
+                    thread_fn::thread_card_make_api(&tasks, &tx3, &i);
                 } 
                 
 

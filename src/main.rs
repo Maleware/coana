@@ -4,6 +4,7 @@ use crate::types::Deck;
 
 mod types;
 mod import;
+mod logic;
 
 macro_rules! println_verbose {
     ($verbose:expr, $($arg:tt)*) => {
@@ -21,6 +22,11 @@ fn main() {
     let register = args.is_present("register");
 
     println_verbose!(verbose, "Verbose is active");
+     
+    match import::scryfall::get_bulk() {
+        Ok(t) => println!("Database downloaded"),
+        Err(e) => println!("{}", e),
+    }
     
     
     match Deck::make(input.to_string()) {
@@ -29,6 +35,7 @@ fn main() {
         },
         Err(e) => println!("Error: {}", e),
     }
+    
 }
 
 fn get_app() -> App<'static, 'static>{

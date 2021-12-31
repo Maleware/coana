@@ -63,7 +63,7 @@ pub mod scryfall {
     use reqwest::blocking;
     use serde_json::Value;
     use crate::types::{CEerror, CEResult};
-    use std::{fs::File, io::prelude::*};
+    use crate::logic::database;
 
     pub fn get(cardname: &String) -> CEResult<String> {
         let request = match exact_request(cardname) {
@@ -153,7 +153,9 @@ pub mod scryfall {
     pub fn get_bulk() -> CEResult<()> {
         let mut api = String::from("https://api.scryfall.com/bulk-data");
 
-        let request = match blocking::get(api) {
+        println!("Downloading database from scryfall....");
+
+        match blocking::get(api) {
             Ok(t) => match t.text() {
                 Ok(t) => {
                     let v: Value = serde_json::from_str(&t).expect("Bulk-data frame was not retrieved");
@@ -165,42 +167,21 @@ pub mod scryfall {
                     match blocking::get(api) {
                         Ok(t) => match t.text() {
                             Ok(t) => {
-                                let v: Value = serde_json::from_str(&t).expect("Bulk-Data can not be formated in json");
+                                let v: Value = serde_json::from_str(&t).expect("Bulk-Data can not be formated to json");
                                 if v["code"] == "not_found".to_string() {
                                     println!("Bulk-Data temporally not available");
                                 }
-                                // think about a new module "data.rs" to store databank functions and later the statistics in it
-                                let mut database = t
-                                .trim()
-                                .split("}},")
-                                .flat_map(str::parse::<String>)
-                                .collect::<Vec<String>>();
-
-                                println!("Cards fetched from scryfall: {}", database.len());
-
-                                let mut file = match File::create("database.txt") {
-                                    Ok(t) => t,
-                                    Err(_) => return Err(CEerror::APIError),
-                                };
-
-                                for card in &database{
-                                    match file.write(card.as_bytes()) {
-                                        Ok(_) => return Ok(()),
-                                        Err(_) => return Err(CEerror::APIError),
-                                    }
-                                }
-                                Ok(())
+                                return database::save(t);
                             },
-                            Err(_) => Err(CEerror::APIError), 
+                            Err(_) => return Err(CEerror::APIError), 
                         }
-                        Err(_) => Err(CEerror::APIError), 
+                        Err(_) => return Err(CEerror::APIError), 
                     }
                 },
-                Err(_) => Err(CEerror::APIError),
+                Err(_) => return Err(CEerror::APIError),
             }
-            Err(_) => Err(CEerror::APIError),
-        };
-        request
+            Err(_) => return Err(CEerror::APIError),
+        }
     }
 }
 /********************************** Combo Import ******************************************/
