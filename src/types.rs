@@ -491,13 +491,17 @@ impl Deck {
 
                 let quater_one = tasks.len() / 4;
                 let quater_two = tasks.len() / 2;
-                let quater_three = 3 * tasks.len() / 4;
+                let quater_three = 3 * tasks.len() / 4;          
 
-                // Gives empty vector into thread, function will not find a card and fallback to api request
-             
-                let data = logic::database::load().unwrap();   
+                let replace: Value = serde_json::from_str("{\"value\": \"Database not loaded\"}").expect("Fatal error: Can not build replacement json");
 
-                let database_unwrap: Value = logic::database::load().unwrap();
+                let database_unwrap: Value = match logic::database::load() {
+                    Ok(t) => t,
+                    Err(e) => {
+                        println!("Can not open database, threads default to api requerst");
+                        replace
+                    },
+                };
 
                 let database = Arc::new(database_unwrap);
                 let database_arc_clone1 = Arc::clone(&database);
@@ -506,22 +510,22 @@ impl Deck {
 
                 let handle1 = thread::spawn(move || {
                     for i in 0..quater_one{
-                        thread_fn::thread_card_make_database(&tasks_arc_clone1, &tx, &i, &database_arc_clone1);
+                        thread_fn::thread_card_make(&tasks_arc_clone1, &tx, &i, &database_arc_clone1);
                     }        
                 });
                 let handle2 = thread::spawn(move || { 
                     for i in quater_one..quater_two {
-                        thread_fn::thread_card_make_api(&tasks_arc_clone2, &tx1, &i); 
+                        thread_fn::thread_card_make(&tasks_arc_clone2, &tx1, &i, &database_arc_clone2); 
                     } 
                 });
                 let handle3 = thread::spawn(move || {
                     for i in quater_two..quater_three {
-                        thread_fn::thread_card_make_api(&tasks_arc_clone3, &tx2, &i);
+                        thread_fn::thread_card_make(&tasks_arc_clone3, &tx2, &i, &database_arc_clone3);
                     } 
                 });
                 
                 for i in quater_three..tasks.len() {
-                    thread_fn::thread_card_make_api(&tasks, &tx3, &i);
+                    thread_fn::thread_card_make(&tasks, &tx3, &i, &database);
                 } 
                 
 
