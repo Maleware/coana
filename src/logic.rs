@@ -57,7 +57,6 @@ pub mod card_build {
     pub fn zones(input: String) {}
 }
 /******************************** Database functions ****************************************/
-// Rebuild for full json and managment with serde
 pub mod database{
     use crate::types::{CEerror, CEResult};
     use std::{fs::File, io::{prelude::*, BufReader}};

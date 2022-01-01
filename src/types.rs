@@ -1,9 +1,9 @@
-use std::sync::atomic::{AtomicBool, Ordering};
+
 use std::{fmt, error, sync::Arc };
 use strum_macros::EnumIter;
 use std::{thread, sync::mpsc};
 use crate::import::user_import;
-use crate::logic::{thread_fn, database, self};
+use crate::logic::{thread_fn, self};
 
 /************************************** Macros ***********************************************************/
 
@@ -437,8 +437,7 @@ impl Card {
      }
     pub fn make(card: &String) -> CEResult<Card> {
         use serde_json::Value;
-        use crate::logic::card_build;
-        
+ 
         match serde_json::from_str(&card) {
             Ok(t) => {
                 let v: Value = t;
@@ -493,6 +492,7 @@ impl Deck {
                 let quater_two = tasks.len() / 2;
                 let quater_three = 3 * tasks.len() / 4;          
 
+                // Little hack to pass through a valid Value to get the API function when load failed
                 let replace: Value = serde_json::from_str("{\"value\": \"Database not loaded\"}").expect("Fatal error: Can not build replacement json");
 
                 let database_unwrap: Value = match logic::database::load() {
