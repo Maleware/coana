@@ -59,8 +59,10 @@ pub mod card_build {
 /******************************** Database functions ****************************************/
 pub mod database{
     use crate::types::{CEerror, CEResult};
-    use std::{fs::File, io::{prelude::*, BufReader}};
+    use std::{fs::{self, *}, io::{prelude::*, BufReader}, time::{SystemTime, Duration}, ops::Add};
     use serde_json::Value;
+    use crate::import;
+    
 
     pub fn save(input: String) -> CEResult<()> {
         
@@ -88,7 +90,38 @@ pub mod database{
             Err(_) => Err(CEerror::DatabaseError),
         }       
     }
-    pub fn update() {}
+    pub fn update() {
+        
+        println!("Updating or creating local card library");
+
+        let file = File::open("database.txt");
+        
+        match file {
+            Ok(_) => {
+                let metadata = fs::metadata("database.txt").expect("File found but can not open");
+                let now = SystemTime::now();
+                
+                if let Ok(time) = metadata.modified() {
+                    if time.add(Duration::from_secs(86400)) <= now {
+                        println!("File is older than a day: Update....");
+                        match import::scryfall::get_bulk() {
+                            Ok(_) => println!("Database successfully downloaded"),
+                            Err(e) => println!("{}",e),
+                        }
+                    }   
+                }                
+            },
+            Err(_) => {
+                println!("Library was not found, download from scryfall");
+                match import::scryfall::get_bulk() {
+                    Ok(_) => println!("Database successfully downloaded"),
+                    Err(e) => println!("{}",e),
+                }
+            },
+        }
+
+
+    }
     pub fn get<'a>(input: &String, database: &'a serde_json::Value) -> CEResult<&'a Value> {
         
         // Estimated length of library plus a few thousand. Faster than constructing length. 
