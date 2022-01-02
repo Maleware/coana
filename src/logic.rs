@@ -45,6 +45,7 @@ pub mod thread_fn {
 /******************************* Logic to build a Card **************************************/
 pub mod card_build {
     use strum::IntoEnumIterator;
+    use crate::types::*;
 
     pub fn name(input: String, dfc: bool, backside: bool) -> String { 
         if dfc {
@@ -89,7 +90,23 @@ pub mod card_build {
     pub fn mana_cost(input: String) -> String {
         input.replace("\"", "")
     }
-    pub fn cardtype(input: String) {}
+    pub fn cardtype(input: String) -> Vec<CardType> {
+        let mut cardtype: Vec<CardType> = Vec::new();
+        let mut result: Vec<CardType> = Vec::new();
+
+        for types in CardType::iter() { 
+            if input.contains(&types.to_string().replace("([])", "")) {
+                cardtype.push(types);
+            }
+        }
+
+        for item in cardtype { 
+            result.push(get_type(&input, item));
+        }
+
+        return result;
+
+    }
     pub fn legendary(input: String) {}
     pub fn stats(input: String) {}
     pub fn commander(input: String) {}
@@ -97,6 +114,97 @@ pub mod card_build {
     pub fn oracle_text(input: String) {}
     pub fn keys(input: String) {}
     pub fn zones(input: String) {}
+    fn get_type(input: &String, cardtype: CardType) -> CardType {
+        match cardtype {
+            CardType::Creature(_) => {
+                let mut buffer: Vec<Option<CreatureSubtype>> = Vec::new();
+                for item in CreatureSubtype::iter() {
+                    if input.to_lowercase().contains(&item.to_string().to_lowercase()) { 
+                        buffer.push(Some(item));
+                    }
+                }
+                if buffer.len() != 0 {
+                    return CardType::Creature(buffer);
+                } else {
+                    buffer.push(None);
+                    return CardType::Creature(buffer);
+                }                
+            },
+            CardType::Artifact(_) => {
+                let mut buffer: Vec<Option<ArtifactSubtype>> = Vec::new();
+                for item in ArtifactSubtype::iter() {
+                    if input.to_lowercase().contains(&item.to_string().to_lowercase()) { 
+                        buffer.push(Some(item));
+                    }
+                }
+                if buffer.len() != 0 {
+                    return CardType::Artifact(buffer);
+                } else {
+                    buffer.push(None);
+                    return CardType::Artifact(buffer);
+                } 
+            },
+            CardType::Enchantment(_) => {
+                let mut buffer: Vec<Option<EnchantmentSubtype>> = Vec::new();
+                for item in EnchantmentSubtype::iter() {
+                    if input.to_lowercase().contains(&item.to_string().to_lowercase()) { 
+                        buffer.push(Some(item));
+                    }
+                }
+                if buffer.len() != 0 {
+                    return CardType::Enchantment(buffer);
+                } else {
+                    buffer.push(None);
+                    return CardType::Enchantment(buffer);
+                } 
+            },
+            CardType::Instant(_) => {
+                let mut buffer: Vec<Option<SpellSubtype>> = Vec::new();
+                for item in SpellSubtype::iter() {
+                    if input.to_lowercase().contains(&item.to_string().to_lowercase()) { 
+                        buffer.push(Some(item));
+                    }
+                }
+                if buffer.len() != 0 {
+                    return CardType::Instant(buffer);
+                } else {
+                    buffer.push(None);
+                    return CardType::Instant(buffer);
+                } 
+            },
+            CardType::Land(_) => {
+                let mut buffer: Vec<Option<LandSubtype>> = Vec::new();
+                for item in LandSubtype::iter() {
+                    if input.to_lowercase().contains(&item.to_string().to_lowercase()) { 
+                        buffer.push(Some(item));
+                    }
+                }
+                if buffer.len() != 0 {
+                    return CardType::Land(buffer);
+                } else {
+                    buffer.push(None);
+                    return CardType::Land(buffer);
+                } 
+            },
+            CardType::Sorcery(_) => {
+                let mut buffer: Vec<Option<SpellSubtype>> = Vec::new();
+                for item in SpellSubtype::iter() {
+                    if input.to_lowercase().contains(&item.to_string().to_lowercase()) { 
+                        buffer.push(Some(item));
+                    }
+                }
+                if buffer.len() != 0 {
+                    return CardType::Sorcery(buffer);
+                } else {
+                    buffer.push(None);
+                    return CardType::Sorcery(buffer);
+                } 
+            
+            },
+            CardType::Planeswalker => { return CardType::Planeswalker; },
+            _ => { return CardType::InvalidCardType; }, 
+        }
+    }
 }
 /******************************** Database functions ****************************************/
 pub mod database{

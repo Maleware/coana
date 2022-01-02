@@ -474,6 +474,7 @@ impl Card {
                     card.name = card_build::name(v["name"].to_string(), dfc, backside);
                     card.mana_cost = card_build::mana_cost(v["mana_cost"].to_string());
                     card.cmc = card_build::cmc(v["cmc"].to_string());
+                    card.cardtype = card_build::cardtype(v["type_line"].to_string());
                     return Ok(card);
                 }
                 
