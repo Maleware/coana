@@ -457,7 +457,7 @@ impl Card {
             zones: None,
          }
      }
-    pub fn make(card: &String) -> CEResult<Card> {
+    pub fn make(card: &String, commander: bool) -> CEResult<Card> {
         use serde_json::Value;
         use crate::logic::card_build;
         match serde_json::from_str(&card) {
@@ -475,6 +475,9 @@ impl Card {
                     card.mana_cost = card_build::mana_cost(v["mana_cost"].to_string());
                     card.cmc = card_build::cmc(v["cmc"].to_string());
                     card.cardtype = card_build::cardtype(v["type_line"].to_string());
+                    card.legendary = card_build::legendary(v["type_line"].to_string());
+                    card.stats = card_build::stats(&v);
+                    card.commander = commander;
                     return Ok(card);
                 }
                 
@@ -557,7 +560,11 @@ impl Deck {
                 drop(tx3);
                 
                 for card in rx {
-                    deck.library.push(card);
+                    if card.1.commander == false {
+                        deck.library.push(card);
+                    } else {
+                        deck.commander.push(card.1);
+                    } 
                 }
                 handle1.join().expect("Can not join thread");
                 handle2.join().expect("Can not join thread");

@@ -7,10 +7,17 @@ pub mod thread_fn {
     use super::database;
 
     pub fn thread_card_make_api(decklist: &Arc<Vec<String>> , tx: &mpsc::Sender<(u8, Card)> , i: &usize) {
-        let quantity_card = quantity_card(&decklist[*i]).expect("Incompatible decklist format");
+        let mut commander: bool = false;
+        let mut quantity_card = quantity_card(&decklist[*i]).expect("Incompatible decklist format");
+
+        if quantity_card[1].contains("*CMDR*") {
+            commander = true;
+            quantity_card[1] = quantity_card[1].replace(" *CMDR*", "");
+        }
+
         match import::scryfall::get(&quantity_card[1]) {
             Ok(t) => {
-                match Card::make(&t) {
+                match Card::make(&t, commander) {
                     Ok(t) => {
                         println!("Fetched Card: {}", t.name);
                         tx.send((*i as u8,t)).unwrap();
@@ -23,10 +30,17 @@ pub mod thread_fn {
         }
     }
     pub fn thread_card_make(decklist: &Arc<Vec<String>> , tx: &mpsc::Sender<(u8, Card)> , i: &usize, database: &Arc<serde_json::Value>){ 
-        let quantity_card = quantity_card(&decklist[*i]).expect("Incompatible decklist format");
+        let mut commander: bool = false;
+        let mut quantity_card = quantity_card(&decklist[*i]).expect("Incompatible decklist format");
+
+        if quantity_card[1].contains("*CMDR*") {
+            commander = true;
+            quantity_card[1] = quantity_card[1].replace(" *CMDR*", "");
+        }
+
         match database::get(&quantity_card[1], &database) {
             Ok(t) => {
-                match Card::make(&t.to_string()) {
+                match Card::make(&t.to_string(), commander) {
                     Ok(t) => {
                         println!("Database Card: {}", t.name);
                         tx.send((*i as u8,t)).unwrap();
@@ -107,9 +121,35 @@ pub mod card_build {
         return result;
 
     }
-    pub fn legendary(input: String) {}
-    pub fn stats(input: String) {}
-    pub fn commander(input: String) {}
+    pub fn legendary(input: String) -> bool {
+        if input.contains("Legendary") {
+            return true;
+        } else {
+            return false;
+        }
+    }
+    pub fn stats(input: &serde_json::Value) -> Option<Vec<Stats>> {
+        let mut result: Vec<Stats> = Vec::new();
+
+        match input["power"].to_string().replace("\"", "").replace("*", "0").parse::<u8>() {
+            Ok(t) => result.push(Stats::Power(t)),
+            Err(_) => (),
+        }
+        match input["toughness"].to_string().replace("\"", "").replace("*", "0").parse::<u8>() {
+            Ok(t) => result.push(Stats::Toughness(t)),
+            Err(_) => (),
+        }
+        match input["loyality"].to_string().replace("\"", "").replace("*", "0").parse::<u8>() {
+            Ok(t) => result.push(Stats::Loyality(t)),
+            Err(_) => (),
+        }
+        if result.len() != 0 {
+            return Some(result);
+        } else {
+            return None;
+        }
+
+    }
     pub fn backside(input: String) {}
     pub fn oracle_text(input: String) {}
     pub fn keys(input: String) {}
