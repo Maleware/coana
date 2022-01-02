@@ -44,6 +44,8 @@ pub mod thread_fn {
 }
 /******************************* Logic to build a Card **************************************/
 pub mod card_build {
+    use strum::IntoEnumIterator;
+
     pub fn name(input: String, dfc: bool, backside: bool) -> String { 
         if dfc {
             let split: Vec<String> = input.trim().split("\\").flat_map(str::parse::<String>).collect::<Vec<String>>();
@@ -55,7 +57,35 @@ pub mod card_build {
         }
         input.replace("\"", "")
     }
-    pub fn cmc(input: String) {}
+    pub fn cmc(input: String) -> f32 {
+        use crate::types::Colours;
+
+        let mut i: f32 = 0.0;
+        for colour in Colours::iter() {
+            if input.contains(&colour.to_string()) {
+                i += 1.0;
+            }
+        }
+
+        // Prepare from {4}{R}{G} to 4 R G
+        let mana = &input
+        .replace("{", "")
+        .replace("}", " ")
+        .replace("\"", "")
+        .trim()
+        .split(" ")
+        .flat_map(str::parse::<String>)
+        .collect::<Vec<String>>();
+
+        // Check if first char is number, if yes add colour
+        match mana[0].parse::<f32>(){
+            Ok(t) => {
+                i += t; 
+                return i;
+            },
+            Err(_) => return i,
+        } 
+    }
     pub fn mana_cost(input: String) -> String {
         input.replace("\"", "")
     }

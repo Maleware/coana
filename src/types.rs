@@ -385,6 +385,7 @@ pub enum Keys{
     Search,
     Target,
     Player,
+    Opponent,
     Token,
 }
 
@@ -406,6 +407,23 @@ pub enum Colours {
     Green,
 }
 impl_fmt!(for Keys, Zones);
+
+impl fmt::Display for Colours {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "{}",
+            match self {
+                Colours::Black => "{B}",
+                Colours::Blue => "{U}",
+                Colours::White => "{W}",
+                Colours::Green => "{G}",
+                Colours::Red => "{R}",
+            }
+        )
+    }
+}
+
 
 /************************************** Card and Deck ***************************************************/
 
@@ -441,17 +459,21 @@ impl Card {
      }
     pub fn make(card: &String) -> CEResult<Card> {
         use serde_json::Value;
- 
+        use crate::logic::card_build;
         match serde_json::from_str(&card) {
             Ok(t) => {
                 let v: Value = t;
+                let dfc: bool = false;
+                let backside: bool = false;
 
                 //Check if card was found
                 if v["code"] == String::from("not_found") { 
                     return Err(CEerror::CardNotFound);
                 } else {
                     let mut card = Card::new();
-                    card.name = v["name"].to_string().replace("\"", "").replace("\\", "");
+                    card.name = card_build::name(v["name"].to_string(), dfc, backside);
+                    card.mana_cost = card_build::mana_cost(v["mana_cost"].to_string());
+                    card.cmc = card_build::cmc(v["cmc"].to_string());
                     return Ok(card);
                 }
                 
@@ -500,7 +522,7 @@ impl Deck {
                 let database_unwrap: Value = match logic::database::load() {
                     Ok(t) => t,
                     Err(e) => {
-                        println!("Can not open database, threads default to api requerst");
+                        println!("Can not open database, threads default to api request");
                         replace
                     },
                 };
