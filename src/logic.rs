@@ -44,9 +44,21 @@ pub mod thread_fn {
 }
 /******************************* Logic to build a Card **************************************/
 pub mod card_build {
-    pub fn name(input: String) {}
+    pub fn name(input: String, dfc: bool, backside: bool) -> String { 
+        if dfc {
+            let split: Vec<String> = input.trim().split("\\").flat_map(str::parse::<String>).collect::<Vec<String>>();
+            if backside {
+                return split[1].replace("\"", "");
+            } else {
+                return split[0].replace("\"", "");
+            }
+        }
+        input.replace("\"", "")
+    }
     pub fn cmc(input: String) {}
-    pub fn mana_cost(input: String) {}
+    pub fn mana_cost(input: String) -> String {
+        input.replace("\"", "")
+    }
     pub fn cardtype(input: String) {}
     pub fn legendary(input: String) {}
     pub fn stats(input: String) {}
@@ -126,11 +138,13 @@ pub mod database{
         
         // Estimated length of library plus a few thousand. Faster than constructing length. 
         let data_len = 30000; 
-       
+        let art_card = format!("{} // {}", input, input);
+
         for i in 0..data_len {
             match database[i].get("name") {
                 Some(t) => { 
-                    if t.to_string().replace("\"", "").contains(input) {
+                    if t.to_string().replace("\"", "").contains(input) 
+                    && !t.to_string().contains(&art_card) {
                        return Ok(&database[i]); 
                     }
                 },
