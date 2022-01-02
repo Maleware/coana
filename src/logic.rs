@@ -63,7 +63,6 @@ pub mod database{
     use serde_json::Value;
     use crate::import;
     
-
     pub fn save(input: String) -> CEResult<()> {
         
         let v: Value = serde_json::from_str(&input).expect("Can not create json");
@@ -102,6 +101,7 @@ pub mod database{
                 let now = SystemTime::now();
                 
                 if let Ok(time) = metadata.modified() {
+                    // Update every full day
                     if time.add(Duration::from_secs(86400)) <= now {
                         println!("File is older than a day: Update....");
                         match import::scryfall::get_bulk() {

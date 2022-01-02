@@ -1,6 +1,6 @@
 use clap::{App, Arg, ArgMatches};
 
-use crate::types::Deck;
+use crate::{types::Deck, logic::database};
 
 mod types;
 mod import;
@@ -20,18 +20,24 @@ fn main() {
     let input = args.value_of("input").unwrap_or("Error");
     let verbose = args.is_present("verbose");
     let register = args.is_present("register");
-
+    let offline = args.is_present("offline");
     println_verbose!(verbose, "Verbose is active");
-     
-    match import::scryfall::get_bulk() {
-        Ok(t) => println!("Database downloaded"),
-        Err(e) => println!("{}", e),
+
+    if !offline {
+        match import::scryfall::get_bulk() {
+            Ok(_) => println!("Database downloaded"),
+            Err(e) => println!("{}", e),    
+        }
     }
     
-    
+    logic::database::update();
+
     match Deck::make(input.to_string()) {
         Ok(t) => {
             println!("Deck length: {}", t.library.len());
+            for card in &t.library {
+                println!("Deck: {:?}", (&card.0, &card.1.name));
+            }
         },
         Err(e) => println!("Error: {}", e),
     }
@@ -60,6 +66,12 @@ fn get_app() -> App<'static, 'static>{
         .short("v")
         .long("verbose")
         .help("If set, verbose mode is activated")
+    )
+    .arg(
+        Arg::with_name("offline")
+        .short("o")
+        .long("offline")
+        .help("Only uses database for card import")
     )
 
 

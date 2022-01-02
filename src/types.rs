@@ -382,6 +382,10 @@ pub enum Keys{
     Tap,
     Untap,
     Discard,
+    Search,
+    Target,
+    Player,
+    Token,
 }
 
 #[derive(Debug, Clone, Eq, PartialEq, EnumIter)]
@@ -455,8 +459,6 @@ impl Card {
             },
             Err(_) => Err(CEerror::FetchValueError),
         }
-
-
      }
 }
 #[derive(Debug, Clone)]
