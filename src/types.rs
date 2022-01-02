@@ -442,7 +442,7 @@ pub struct Card {
     pub zones: Option<Vec<Zones>>,
 }
 impl Card {
-    pub fn new() -> Card {
+    pub fn new() -> Self {
         Card {
             cmc: 0.0,
             mana_cost: String::from(""),
@@ -457,34 +457,20 @@ impl Card {
             zones: None,
          }
      }
-    pub fn make(card: &String, commander: bool) -> CEResult<Card> {
+    pub fn make(card: &String, commander: bool) -> CEResult<Self> {
         use serde_json::Value;
         use crate::logic::card_build;
+
         match serde_json::from_str(&card) {
             Ok(t) => {
                 let v: Value = t;
-                let dfc: bool = false;
-                let backside: bool = false;
 
                 //Check if card was found
                 if v["code"] == String::from("not_found") { 
                     return Err(CEerror::CardNotFound);
                 } else {
-                    let mut card = Card::new();
-                    card.name = card_build::name(v["name"].to_string(), dfc, backside);
-                    card.mana_cost = card_build::mana_cost(v["mana_cost"].to_string());
-                    card.cmc = card_build::cmc(v["cmc"].to_string());
-                    card.cardtype = card_build::cardtype(v["type_line"].to_string());
-                    card.legendary = card_build::legendary(v["type_line"].to_string());
-                    card.stats = card_build::stats(&v);
-                    card.commander = commander;
-                    card.oracle_text = card_build::oracle_text(v["oracle_text"].to_string());
-                    card.keys = card_build::keys(v["oracle_text"].to_string());
-                    card.zones = card_build::zones(v["oracle_text"].to_string());
-                    return Ok(card);
+                    return Ok(card_build::build(v, commander));
                 }
-                
-
             },
             Err(_) => Err(CEerror::FetchValueError),
         }

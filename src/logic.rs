@@ -61,18 +61,26 @@ pub mod card_build {
     use strum::IntoEnumIterator;
     use crate::types::*;
 
-    pub fn name(input: String, dfc: bool, backside: bool) -> String { 
-        if dfc {
-            let split: Vec<String> = input.trim().split("\\").flat_map(str::parse::<String>).collect::<Vec<String>>();
-            if backside {
-                return split[1].replace("\"", "");
-            } else {
-                return split[0].replace("\"", "");
-            }
-        }
+
+    pub fn build(v: serde_json::Value, commander: bool) -> Card {
+         Card{
+            cmc: cmc(v["cmc"].to_string()),
+            mana_cost: mana_cost(v["mana_cost"].to_string()),
+            name: name(v["name"].to_string()),
+            cardtype: cardtype(v["type_line"].to_string()),
+            legendary: legendary(v["type_line"].to_string()),
+            stats:stats(&v),
+            commander: commander,
+            backside: Box::new(None),
+            oracle_text: oracle_text(v["oracle_text"].to_string()),
+            keys: keys(v["oracle_text"].to_string()),
+            zones: zones(v["oracle_text"].to_string()),
+         }
+    }
+    fn name(input: String) -> String {  
         input.replace("\"", "")
     }
-    pub fn cmc(input: String) -> f32 {
+    fn cmc(input: String) -> f32 {
         use crate::types::Colours;
 
         let mut i: f32 = 0.0;
@@ -101,10 +109,10 @@ pub mod card_build {
             Err(_) => return i,
         } 
     }
-    pub fn mana_cost(input: String) -> String {
+    fn mana_cost(input: String) -> String {
         input.replace("\"", "")
     }
-    pub fn cardtype(input: String) -> Vec<CardType> {
+    fn cardtype(input: String) -> Vec<CardType> {
         let mut cardtype: Vec<CardType> = Vec::new();
         let mut result: Vec<CardType> = Vec::new();
 
@@ -121,14 +129,14 @@ pub mod card_build {
         return result;
 
     }
-    pub fn legendary(input: String) -> bool {
+    fn legendary(input: String) -> bool {
         if input.contains("Legendary") {
             return true;
         } else {
             return false;
         }
     }
-    pub fn stats(input: &serde_json::Value) -> Option<Vec<Stats>> {
+    fn stats(input: &serde_json::Value) -> Option<Vec<Stats>> {
         let mut result: Vec<Stats> = Vec::new();
 
         match input["power"].to_string().replace("\"", "").replace("*", "0").parse::<u8>() {
@@ -150,11 +158,11 @@ pub mod card_build {
         }
 
     }
-    pub fn backside(input: String) {}
-    pub fn oracle_text(input: String) -> String { // not neccessary, but maybe need to build something here
+    fn backside(input: String) {}
+    fn oracle_text(input: String) -> String { // not neccessary, but maybe need to build something here
         input
     }
-    pub fn keys(input: String) -> Option<Vec<Keys>> {
+    fn keys(input: String) -> Option<Vec<Keys>> {
         let mut result: Vec<Keys> = Vec::new();
 
         for key in Keys::iter() {
@@ -169,7 +177,7 @@ pub mod card_build {
             return None;
         }
     }
-    pub fn zones(input: String) -> Option<Vec<Zones>> {
+    fn zones(input: String) -> Option<Vec<Zones>> {
         let mut result: Vec<Zones> = Vec::new();
         
         for zone in Zones::iter() {
