@@ -151,8 +151,24 @@ pub mod card_build {
 
     }
     pub fn backside(input: String) {}
-    pub fn oracle_text(input: String) {}
-    pub fn keys(input: String) {}
+    pub fn oracle_text(input: String) -> String { // not neccessary, but maybe need to build something here
+        input
+    }
+    pub fn keys(input: String) -> Option<Vec<Keys>> {
+        let mut result: Vec<Keys> = Vec::new();
+
+        for key in Keys::iter() {
+            if input.to_lowercase().contains(&key.to_string().to_lowercase()) {
+                result.push(key);
+            }
+        }
+
+        if result.len() != 0 {
+            return Some(result);
+        }else {
+            return None;
+        }
+    }
     pub fn zones(input: String) {}
     fn get_type(input: &String, cardtype: CardType) -> CardType {
         match cardtype {

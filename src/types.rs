@@ -478,6 +478,8 @@ impl Card {
                     card.legendary = card_build::legendary(v["type_line"].to_string());
                     card.stats = card_build::stats(&v);
                     card.commander = commander;
+                    card.oracle_text = card_build::oracle_text(v["oracle_text"].to_string());
+                    card.keys = card_build::keys(v["oracle_text"].to_string());
                     return Ok(card);
                 }
                 
