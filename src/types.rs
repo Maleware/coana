@@ -480,6 +480,7 @@ impl Card {
                     card.commander = commander;
                     card.oracle_text = card_build::oracle_text(v["oracle_text"].to_string());
                     card.keys = card_build::keys(v["oracle_text"].to_string());
+                    card.zones = card_build::zones(v["oracle_text"].to_string());
                     return Ok(card);
                 }
                 

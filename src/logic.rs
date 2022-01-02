@@ -169,7 +169,21 @@ pub mod card_build {
             return None;
         }
     }
-    pub fn zones(input: String) {}
+    pub fn zones(input: String) -> Option<Vec<Zones>> {
+        let mut result: Vec<Zones> = Vec::new();
+        
+        for zone in Zones::iter() {
+            if input.to_lowercase().contains(&zone.to_string().to_lowercase()) {
+                result.push(zone); 
+            }
+        }
+        
+        if result.len() != 0 {
+            return Some(result);
+        }else {
+            return None;
+        }
+    }
     fn get_type(input: &String, cardtype: CardType) -> CardType {
         match cardtype {
             CardType::Creature(_) => {
