@@ -185,6 +185,10 @@ pub mod scryfall {
     }
 }
 /********************************** Combo Import ******************************************/
+/*
+
+Not Avialable anymore... 01 / 03 / 22
+
 pub mod combo {
     use reqwest::blocking;
     use crate::types::{CEResult, CEerror};
@@ -194,7 +198,7 @@ pub mod combo {
     pub fn update() -> CEResult<()>{
 
         match File::open("combo.txt") {
-            Ok(t) => {
+            Ok(_) => {
                 let metadata = fs::metadata("combo.txt").expect("File found but can not open");
                 let now = SystemTime::now();
                 
@@ -309,5 +313,5 @@ pub mod combo {
         }
         vec
     }
-
 }
+*/

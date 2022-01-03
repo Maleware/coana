@@ -94,7 +94,6 @@ pub mod card_build {
         input.replace("\"", "")
     }
     fn cmc(input: String) -> f32 {
-        use crate::types::Colours;
 
         let mut i: f32 = 0.0;
         for colour in Colours::iter() {

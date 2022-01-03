@@ -655,11 +655,7 @@ impl Deck {
     pub fn make(input: String)-> CEResult<Deck>{
         use serde_json::Value;
 
-        let mut deck = Deck{
-            name: String::from(&input),
-            commander: Vec::<Card>::new(),
-            library: Vec::<Card>::new(),
-        };
+        let mut deck = Deck::new(String::from(&input), Vec::<Card>::new(), Vec::<Card>::new(), );
 
         match user_import::decklist(input) {
 
@@ -683,7 +679,7 @@ impl Deck {
 
                 let database_unwrap: Value = match logic::database::load() {
                     Ok(t) => t,
-                    Err(e) => {
+                    Err(_) => {
                         println!("Can not open database, threads default to api request");
                         replace
                     },
