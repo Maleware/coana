@@ -24,19 +24,19 @@ fn main() {
     println_verbose!(verbose, "Verbose is active");
 
     if !offline {
-        match import::scryfall::get_bulk() {
-            Ok(_) => println!("Database downloaded"),
-            Err(e) => println!("{}", e),    
-        }
+        logic::database::update(); 
     }
     
-    logic::database::update();
+ 
 
     match Deck::make(input.to_string()) {
         Ok(t) => {
-            println!("Deck length: {}", t.library.len());
+            println!("Deck name: {}", t.name);
             for card in &t.library {
-                println!("Deck: {:?}", (&card.0, &card.1.name));
+                println!("For: {:?}, Zones: {:?}", (&card.name), card.zones);
+            }
+            for commander in &t.commander{
+                println!("Commander: {}", commander.name);
             }
         },
         Err(e) => println!("Error: {}", e),

@@ -460,7 +460,7 @@ impl Card {
     pub fn make(card: &String, commander: bool) -> CEResult<Self> {
         use serde_json::Value;
         use crate::logic::card_build;
-
+        // card will contain backside. From here we can just pass through to build and backside: Box<card_build::build(v["backside"], commander)>
         match serde_json::from_str(&card) {
             Ok(t) => {
                 let v: Value = t;
@@ -480,7 +480,7 @@ impl Card {
 pub struct Deck{
     pub name: String,
     pub commander: Vec<Card>,
-    pub library: Vec<(u8, Card)>,
+    pub library: Vec<Card>,
 }
 impl Deck {
     pub fn make(input: String)-> CEResult<Deck>{
@@ -489,7 +489,7 @@ impl Deck {
         let mut deck = Deck{
             name: String::from(&input),
             commander: Vec::<Card>::new(),
-            library: Vec::<(u8, Card)>::new(),
+            library: Vec::<Card>::new(),
         };
 
         match user_import::decklist(input) {
@@ -549,10 +549,10 @@ impl Deck {
                 drop(tx3);
                 
                 for card in rx {
-                    if card.1.commander == false {
+                    if card.commander == false {
                         deck.library.push(card);
                     } else {
-                        deck.commander.push(card.1);
+                        deck.commander.push(card);
                     } 
                 }
                 handle1.join().expect("Can not join thread");

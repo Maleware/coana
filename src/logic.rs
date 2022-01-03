@@ -6,7 +6,7 @@ pub mod thread_fn {
 
     use super::database;
 
-    pub fn thread_card_make_api(decklist: &Arc<Vec<String>> , tx: &mpsc::Sender<(u8, Card)> , i: &usize) {
+    pub fn thread_card_make_api(decklist: &Arc<Vec<String>> , tx: &mpsc::Sender<Card> , i: &usize) {
         let mut commander: bool = false;
         let mut quantity_card = quantity_card(&decklist[*i]).expect("Incompatible decklist format");
 
@@ -19,8 +19,10 @@ pub mod thread_fn {
             Ok(t) => {
                 match Card::make(&t, commander) {
                     Ok(t) => {
-                        println!("Fetched Card: {}", t.name);
-                        tx.send((*i as u8,t)).unwrap();
+                        println!("Fetched Card:{} {}",&quantity_card[0], t.name);
+                        for _j in 0..quantity_card[0].parse::<u8>().expect("List format error: No integer.") {   
+                            tx.send(t.clone()).expect("Thread can not send.");
+                        }    
                         thread::sleep(Duration::from_millis(10))
                     },
                     Err(e) => println!("Thread error detected: {}", e),
@@ -29,7 +31,7 @@ pub mod thread_fn {
             Err(e) => println!("Thread error detected: {}", e),
         }
     }
-    pub fn thread_card_make(decklist: &Arc<Vec<String>> , tx: &mpsc::Sender<(u8, Card)> , i: &usize, database: &Arc<serde_json::Value>){ 
+    pub fn thread_card_make(decklist: &Arc<Vec<String>> , tx: &mpsc::Sender<Card> , i: &usize, database: &Arc<serde_json::Value>){ 
         let mut commander: bool = false;
         let mut quantity_card = quantity_card(&decklist[*i]).expect("Incompatible decklist format");
 
@@ -42,8 +44,10 @@ pub mod thread_fn {
             Ok(t) => {
                 match Card::make(&t.to_string(), commander) {
                     Ok(t) => {
-                        println!("Database Card: {}", t.name);
-                        tx.send((*i as u8,t)).unwrap();
+                        println!("Database Card:{} {}",&quantity_card[0], t.name);
+                        for _j in 0..quantity_card[0].parse::<u8>().expect("List format error: No integer.") {   
+                            tx.send((t.clone())).expect("Thread can not send");
+                        }
                         thread::sleep(Duration::from_millis(10))
                     },
                     Err(e) => println!("Thread error detected: {}", e),
