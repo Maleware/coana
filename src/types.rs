@@ -1,9 +1,7 @@
 
-use std::{fmt, error, sync::Arc };
+use std::{fmt, error, thread,sync::{Arc, mpsc}, fs::* };
 use strum_macros::EnumIter;
-use std::{thread, sync::mpsc};
 use serde::{Serialize, Deserialize};
-use std::{fs::*, io::{prelude::*, BufReader}};
 
 use crate::import::user_import;
 use crate::logic::{thread_fn, self};
@@ -634,9 +632,7 @@ impl Card {
                 || v["type_line"].to_string().contains("//"){
                     mdfc = Some(&v["card_faces"][1]);
                 }
-
-                println!("Card layout: {}", v["layout"].to_string());
-
+ 
                 //Check if card was found
                 if v["code"] == String::from("not_found") { 
                     return Err(CEerror::CardNotFound);
@@ -736,24 +732,19 @@ impl Deck {
         }
     }  
     pub fn load(identifier: &String) -> CEResult<Deck> {
-        use serde_json::Value;
 
         let save = String::from("save/");
         let path = format!("{}{}", save, identifier);
       
-
         match File::open(path) {
             Ok(t) => {
-               
                 let deck = serde_json::from_reader(t).expect("Saved deck no proper json");
-
                 println!("Deck successfully opened"); 
                
                 Ok(deck) 
             },
             Err(_) => Err(CEerror::DatabaseError),
         }
-
     }
     pub fn save(deck: &Deck){
         let save = String::from("save/");

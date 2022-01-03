@@ -1,4 +1,5 @@
 use clap::{App, Arg, ArgMatches};
+use types::CEResult;
 
 use crate::{types::Deck, logic::database};
 
@@ -14,6 +15,19 @@ macro_rules! println_verbose {
     };
 }
 
+pub fn database(offline: bool, verbose: bool) {
+     
+    if !offline {
+        println_verbose!(verbose, "Online - Mode active, checking on updates");
+        logic::database::update();
+        import::combo::update().expect("Can not find or download combo");
+    } else {
+        println_verbose!(verbose, "Offline - Mode active, checking on data correct and existing.");
+        logic::database::load().expect("Can not load databases, fatal in offline modus");
+        import::combo::load().expect("Can not load combo data, fatal in offline modus");
+    }
+}
+
 fn main() {
     let args = get_app().get_matches();
     
@@ -23,21 +37,22 @@ fn main() {
     let offline = args.is_present("offline");
     println_verbose!(verbose, "Verbose is active");
 
-    if !offline {
-        logic::database::update(); 
-    }
+    // update routine to load or check neccessary data
+    database(offline, verbose);
     
- 
-
     match Deck::make(input.to_string()) {
         Ok(t) => {
             println!("Deck name: {}", t.name);
             for card in &t.library {
-                println!("For: {:?}, Zones: {:?}", (&card.name), card.zones);
+                println!("Card: {} CMC: {}", &card.name, &card.mana_cost );
+                println!("Zones: {:?} , Type: {:?} ,\n  Keys: {:?} Keywords: {:?}\n Cartypes in Oracle: {:?} \n Backside: {:?}",
+                 card.zones, card.cardtype, card.keys, card.keywords, card.oracle_types, card.backside);
             }
             for commander in &t.commander{
                 println!("Commander: {}", commander.name);
             }
+
+            Deck::save(&t);  
         },
         Err(e) => println!("Error: {}", e),
     }

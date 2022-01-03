@@ -34,7 +34,7 @@ pub mod thread_fn {
     pub fn thread_card_make(decklist: &Arc<Vec<String>> , tx: &mpsc::Sender<Card> , i: &usize, database: &Arc<serde_json::Value>){ 
         let mut commander: bool = false;
         let mut quantity_card = quantity_card(&decklist[*i]).expect("Incompatible decklist format");
-        let mut backside: bool = false; 
+
 
         if quantity_card[1].contains("*CMDR*") {
             commander = true;
@@ -59,7 +59,7 @@ pub mod thread_fn {
                     Err(e) => println!("Thread error detected: {}", e),
                 } 
             },
-            Err(e) => {
+            Err(_) => {
                 
                 thread_card_make_api(decklist, tx, i);
             },
