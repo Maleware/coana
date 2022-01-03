@@ -364,7 +364,7 @@ pub enum Stats{
 
 impl_fmt!(for CardType, ArtifactSubtype, SpellSubtype, CreatureSubtype, EnchantmentSubtype, LandSubtype);
 
-/*************************************** Keywords, Zones and Colours *************************************/
+/*************************************** Keywords, Zones, effects and Colours *************************************/
 
 #[derive(Debug, Clone, Eq, PartialEq, EnumIter)]
 pub enum Keys{
@@ -380,6 +380,7 @@ pub enum Keys{
     Sacrifice,
     Scry,
     Tap,
+    Tapped,
     Untap,
     Discard,
     Search,
@@ -387,6 +388,162 @@ pub enum Keys{
     Player,
     Opponent,
     Token,
+    All,
+    Each,
+    Every,
+}
+
+pub enum Effects{
+    
+}
+#[derive(Debug, Clone, Eq, PartialEq, EnumIter)]
+pub enum Keywords{
+Deathtouch,
+Defender,
+Double_Strike,
+Enchant,
+Equip,
+First_Strike,
+Flash,
+Flying,
+ Haste,
+ Hexproof,
+ Indestructible,
+ Intimidate,
+ Landwalk,
+ Lifelink,
+ Protection,
+ Reach,
+ Shroud,
+ Trample,
+ Vigilance,
+ Ward,
+ Banding,
+ Rampage,
+ Cumulative_Upkeep,
+ Flanking,
+ Phasing,
+ Buyback,
+ Shadow,
+ Cycling,
+ Echo,
+ Horsemanship,
+ Fading,
+ Kicker,
+ Flashback,
+ Madness,
+ Fear,
+ Morph,
+ Amplify,
+ Provoke,
+ Storm,
+ Affinity,
+ Entwine,
+ Modular,
+ Sunburst,
+ Bushido,
+ Soulshift,
+ Splice,
+ Offering,
+ Ninjutsu,
+ Epic,
+ Convoke,
+ Dredge,
+ Transmute,
+ Bloodthirst,
+ Haunt,
+ Replicate,
+ Forecast,
+ Graft,
+ Recover,
+ Ripple,
+ SplitSecond,
+ Suspend,
+ Vanishing,
+ Absorb,
+ Aura_Swap,
+ Delve,
+ Fortify,
+ Frenzy,
+ Gravestorm,
+ Poisonous,
+ Transfigure,
+ Champion,
+ Changeling,
+ Evoke,
+ Hideaway,
+ Prowl,
+ Reinforce,
+ Conspire,
+ Persist,
+ Wither,
+ Retrace,
+ Devour,
+ Exalted,
+ Unearth,
+ Cascade,
+ Annihilator,
+ Level_Up,
+ Rebound,
+ Totem_Armor,
+ Infect,
+ Battle_Cry,
+ Living_Weapon,
+ Undying,
+ Miracle,
+ Soulbond,
+ Overload,
+ Scavenge,
+ Unleash,
+ Cipher,
+ Evolve,
+ Extort,
+ Tribute,
+ Dethrone,
+ Hidden_Agenda,
+ Outlast,
+ Prowess,
+ Dash,
+ Exploit,
+ Menace,
+ Renown,
+ Awaken,
+ Devoid,
+ Ingest,
+ Myriad,
+ Surge,
+ Skulk,
+ Emerge,
+ Escalate,
+ Melee,
+ Crew,
+ Fabricate,
+ Partner,
+ Undaunted,
+ Improvise,
+ Aftermath,
+ Embalm,
+ Eternalize,
+ Afflict,
+ Ascend,
+ Assist,
+ Jump_Start,
+ Mentor,
+ Afterlife,
+ Riot,
+ Spectacle,
+ Escape,
+ Companion,
+ Mutate,
+ Encore,
+ Boast,
+ Foretell,
+ Demonstrate,
+ Daybound_and_Nightbound,
+ Disturb,
+ Decayed,
+ Cleave,
+ Training,
 }
 
 #[derive(Debug, Clone, Eq, PartialEq, EnumIter)]
@@ -406,7 +563,7 @@ pub enum Colours {
     Red,
     Green,
 }
-impl_fmt!(for Keys, Zones);
+impl_fmt!(for Keys, Zones, Keywords);
 
 impl fmt::Display for Colours {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -440,6 +597,8 @@ pub struct Card {
     pub oracle_text: String,
     pub keys: Option<Vec<Keys>>, 
     pub zones: Option<Vec<Zones>>,
+    pub keywords: Option<Vec<Keywords>>,
+    pub oracle_types: Option<Vec<CardType>>,
 }
 impl Card {
     pub fn new() -> Self {
@@ -455,21 +614,32 @@ impl Card {
             oracle_text: String::from(""),
             keys: None,
             zones: None,
+            keywords: None,
+            oracle_types: None,
          }
      }
     pub fn make(card: &String, commander: bool) -> CEResult<Self> {
         use serde_json::Value;
         use crate::logic::card_build;
-        // card will contain backside. From here we can just pass through to build and backside: Box<card_build::build(v["backside"], commander)>
+        // card will contain backside From here we can just pass through to build and backside: Box<card_build::build(v["backside"], commander)>
         match serde_json::from_str(&card) {
             Ok(t) => {
                 let v: Value = t;
+                let mut mdfc: Option<&serde_json::Value> = None;
+
+                if v["layout"] == "modal_dfc".to_string()
+                || v["layout"] == "transform".to_string()
+                || v["type_line"].to_string().contains("//"){
+                    mdfc = Some(&v["card_faces"][1]);
+                }
+
+                println!("Card layout: {}", v["layout"].to_string());
 
                 //Check if card was found
                 if v["code"] == String::from("not_found") { 
                     return Err(CEerror::CardNotFound);
                 } else {
-                    return Ok(card_build::build(v, commander));
+                    return Ok(card_build::build(&v, commander, mdfc));
                 }
             },
             Err(_) => Err(CEerror::FetchValueError),

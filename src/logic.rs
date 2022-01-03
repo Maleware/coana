@@ -34,19 +34,25 @@ pub mod thread_fn {
     pub fn thread_card_make(decklist: &Arc<Vec<String>> , tx: &mpsc::Sender<Card> , i: &usize, database: &Arc<serde_json::Value>){ 
         let mut commander: bool = false;
         let mut quantity_card = quantity_card(&decklist[*i]).expect("Incompatible decklist format");
+        let mut backside: bool = false; 
 
         if quantity_card[1].contains("*CMDR*") {
             commander = true;
             quantity_card[1] = quantity_card[1].replace(" *CMDR*", "");
         }
 
+        if quantity_card[1].contains("/") {
+            quantity_card[1] = quantity_card[1].replace("/", "//");
+        }
+
+ 
         match database::get(&quantity_card[1], &database) {
             Ok(t) => {
                 match Card::make(&t.to_string(), commander) {
                     Ok(t) => {
                         println!("Database Card:{} {}",&quantity_card[0], t.name);
                         for _j in 0..quantity_card[0].parse::<u8>().expect("List format error: No integer.") {   
-                            tx.send((t.clone())).expect("Thread can not send");
+                            tx.send(t.clone()).expect("Thread can not send");
                         }
                         thread::sleep(Duration::from_millis(10))
                     },
@@ -66,8 +72,9 @@ pub mod card_build {
     use crate::types::*;
 
 
-    pub fn build(v: serde_json::Value, commander: bool) -> Card {
-         Card{
+    pub fn build(v: &serde_json::Value, commander: bool, mdfc: Option<&serde_json::Value>) -> Card {
+        
+        Card{
             cmc: cmc(v["cmc"].to_string()),
             mana_cost: mana_cost(v["mana_cost"].to_string()),
             name: name(v["name"].to_string()),
@@ -75,11 +82,13 @@ pub mod card_build {
             legendary: legendary(v["type_line"].to_string()),
             stats:stats(&v),
             commander: commander,
-            backside: Box::new(None),
+            backside: backside(mdfc),
             oracle_text: oracle_text(v["oracle_text"].to_string()),
             keys: keys(v["oracle_text"].to_string()),
             zones: zones(v["oracle_text"].to_string()),
-         }
+            keywords: keywords(v["oracle_text"].to_string()),
+            oracle_types: oracle_types(v["oracle_text"].to_string()),
+        }
     }
     fn name(input: String) -> String {  
         input.replace("\"", "")
@@ -162,7 +171,12 @@ pub mod card_build {
         }
 
     }
-    fn backside(input: String) {}
+    fn backside(input: Option<&serde_json::Value>) -> Box<Option<Card>> {
+        match input {
+            Some(t) => {return Box::new(Some(build(t, false , None))); },
+            None =>{return Box::new(None)},
+        }
+    }
     fn oracle_text(input: String) -> String { // not neccessary, but maybe need to build something here
         input
     }
@@ -190,6 +204,36 @@ pub mod card_build {
             }
         }
         
+        if result.len() != 0 {
+            return Some(result);
+        }else {
+            return None;
+        }
+    }
+    fn keywords(input: String) -> Option<Vec<Keywords>> {
+        let mut result: Vec<Keywords> = Vec::new();
+        
+        for keyword in Keywords::iter() {
+            if input.to_lowercase().contains(&keyword.to_string().to_lowercase()) {
+                result.push(keyword); 
+            }
+        }
+        
+        if result.len() != 0 {
+            return Some(result);
+        }else {
+            return None;
+        }
+    }
+    fn oracle_types(input: String) -> Option<Vec<CardType>> {
+        let mut result: Vec<CardType> = Vec::new();
+
+        for types in CardType::iter() {
+            if input.to_string().to_lowercase().contains(&types.to_string().replace("([])", "").to_lowercase()) {
+                result.push(types);
+            }
+        }
+
         if result.len() != 0 {
             return Some(result);
         }else {
@@ -360,10 +404,12 @@ pub mod database{
         let data_len = 30000; 
         let art_card = format!("{} // {}", input, input);
 
+
+
         for i in 0..data_len {
             match database[i].get("name") {
                 Some(t) => { 
-                    if t.to_string().replace("\"", "").contains(input) 
+                    if t.to_string().replace("\"", "") == *input 
                     && !t.to_string().contains(&art_card) {
                        return Ok(&database[i]); 
                     }
