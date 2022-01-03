@@ -1,5 +1,4 @@
 use clap::{App, Arg, ArgMatches};
-use types::CEResult;
 
 use crate::{types::Deck, logic::database};
 
@@ -19,7 +18,7 @@ pub fn database(offline: bool, verbose: bool) {
      
     if !offline {
         println_verbose!(verbose, "Online - Mode active, checking on updates");
-        logic::database::update();
+        database::update();
         import::combo::update().expect("Can not find or download combo");
     } else {
         println_verbose!(verbose, "Offline - Mode active, checking on data correct and existing.");

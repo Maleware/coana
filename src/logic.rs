@@ -212,13 +212,13 @@ pub mod card_build {
     }
     fn keywords(input: String) -> Option<Vec<Keywords>> {
         let mut result: Vec<Keywords> = Vec::new();
-        
+
         for keyword in Keywords::iter() {
             if input.to_lowercase().contains(&keyword.to_string().to_lowercase()) {
                 result.push(keyword); 
             }
         }
-        
+
         if result.len() != 0 {
             return Some(result);
         }else {

@@ -45,6 +45,7 @@ pub enum CardType{
     Enchantment(Vec<Option<EnchantmentSubtype>>),
     Land(Vec<Option<LandSubtype>>),
     Planeswalker,
+    Token,
     InvalidCardType,
 }
 #[derive(Debug, Clone,Eq, PartialEq, EnumIter, Serialize, Deserialize)]
