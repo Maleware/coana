@@ -368,6 +368,7 @@ impl_fmt!(for CardType, ArtifactSubtype, SpellSubtype, CreatureSubtype, Enchantm
 
 #[derive(Debug, Clone, Eq, PartialEq, EnumIter)]
 pub enum Keys{
+    Cast,
     Exile,
     Destroy,
     Return,

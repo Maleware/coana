@@ -380,6 +380,10 @@ pub mod database{
                     // Update every full day
                     if time.add(Duration::from_secs(86400)) <= now {
                         println!("File is older than a day: Update....");
+                        match remove_file("database.txt"){
+                            Ok(_) => println!("Expired database removed..."),
+                            Err(_) => println!("Can not remove old database..."),
+                        }
                         match import::scryfall::get_bulk() {
                             Ok(_) => println!("Database successfully downloaded"),
                             Err(e) => println!("{}",e),
