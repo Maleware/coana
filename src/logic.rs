@@ -339,7 +339,7 @@ pub mod database{
     use serde_json::Value;
     use crate::import;
     
-    pub fn save(input: String) -> CEResult<()> {
+    pub fn save(input: &String) -> CEResult<()> {
         
         let v: Value = serde_json::from_str(&input).expect("Can not create json");
         serde_json::to_writer(&File::create("database.txt").expect("Can not write database.txt"),&v).expect("Can not write database.txt"); 

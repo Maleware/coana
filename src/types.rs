@@ -2,8 +2,12 @@
 use std::{fmt, error, sync::Arc };
 use strum_macros::EnumIter;
 use std::{thread, sync::mpsc};
+use serde::{Serialize, Deserialize};
+use std::{fs::*, io::{prelude::*, BufReader}};
+
 use crate::import::user_import;
 use crate::logic::{thread_fn, self};
+
 
 /************************************** Macros ***********************************************************/
 
@@ -23,7 +27,6 @@ pub enum CEerror {
     APIError,
     DatabaseError,
     FetchValueError,
-    UnknownCardType,
     CardNotFound,
     ComboError,
     HyperGeoFailed,
@@ -35,7 +38,7 @@ pub type CEResult<T> = Result<T, CEerror>;
 
 /********************************** Magic Card Types *****************************************************/
 
-#[derive(Debug, Clone,Eq, PartialEq, EnumIter)]
+#[derive(Debug, Clone,Eq, PartialEq, EnumIter, Serialize, Deserialize)]
 pub enum CardType{
     Instant(Vec<Option<SpellSubtype>>),
     Sorcery(Vec<Option<SpellSubtype>>),
@@ -46,7 +49,7 @@ pub enum CardType{
     Planeswalker,
     InvalidCardType,
 }
-#[derive(Debug, Clone,Eq, PartialEq, EnumIter)]
+#[derive(Debug, Clone,Eq, PartialEq, EnumIter, Serialize, Deserialize)]
 pub enum ArtifactSubtype{
     Blood, 
     Clue, 
@@ -58,14 +61,14 @@ pub enum ArtifactSubtype{
     Treasure, 
     Vehicle,
 }
-#[derive(Debug, Clone,Eq, PartialEq, EnumIter)]
+#[derive(Debug, Clone,Eq, PartialEq, EnumIter, Serialize, Deserialize)]
 pub enum SpellSubtype{
     Adventure, 
     Arcane, 
     Lesson, 
     Trap,
 }
-#[derive(Debug, Clone,Eq, PartialEq, EnumIter)]
+#[derive(Debug, Clone,Eq, PartialEq, EnumIter, Serialize, Deserialize)]
 pub enum CreatureSubtype{
 Advisor,
 Aetherborn,
@@ -329,7 +332,7 @@ Yeti,
 Zombie,
 Zubera,
 }
-#[derive(Debug, Clone,Eq, PartialEq, EnumIter)]
+#[derive(Debug, Clone,Eq, PartialEq, EnumIter, Serialize, Deserialize)]
 pub enum EnchantmentSubtype{
     Aura, 
     Cartouche, 
@@ -340,7 +343,7 @@ pub enum EnchantmentSubtype{
     Shrine, 
     Shard,
 }
-#[derive(Debug, Clone,Eq, PartialEq, EnumIter)]
+#[derive(Debug, Clone,Eq, PartialEq, EnumIter, Serialize, Deserialize)]
 pub enum LandSubtype{
     Plains, 
     Island, 
@@ -355,18 +358,18 @@ pub enum LandSubtype{
     UrzasPowerPlant, 
     UrzasTower,
 }
-#[derive(Debug, Clone,Eq, PartialEq, EnumIter)]
+#[derive(Debug, Clone,Eq, PartialEq, EnumIter, Serialize, Deserialize)]
 pub enum Stats{
     Power(u8),
     Toughness(u8),
     Loyality(u8),
 }
 
-impl_fmt!(for CardType, ArtifactSubtype, SpellSubtype, CreatureSubtype, EnchantmentSubtype, LandSubtype);
+impl_fmt!(for CardType, ArtifactSubtype, SpellSubtype, CreatureSubtype, EnchantmentSubtype, LandSubtype, Stats);
 
 /*************************************** Keywords, Zones, effects and Colours *************************************/
 
-#[derive(Debug, Clone, Eq, PartialEq, EnumIter)]
+#[derive(Debug, Clone, Eq, PartialEq, EnumIter, Serialize, Deserialize)]
 pub enum Keys{
     Cast,
     Exile,
@@ -394,10 +397,8 @@ pub enum Keys{
     Every,
 }
 
-pub enum Effects{
-    
-}
-#[derive(Debug, Clone, Eq, PartialEq, EnumIter)]
+// pub enum Effects{}
+#[derive(Debug, Clone, Eq, PartialEq, EnumIter, Serialize, Deserialize)]
 pub enum Keywords{
 Deathtouch,
 Defender,
@@ -547,7 +548,7 @@ Flying,
  Training,
 }
 
-#[derive(Debug, Clone, Eq, PartialEq, EnumIter)]
+#[derive(Debug, Clone, Eq, PartialEq, EnumIter, Serialize, Deserialize)]
 pub enum Zones{
     Battlefield,
     Hand,
@@ -556,7 +557,7 @@ pub enum Zones{
     CommandZone,
     Library,
 }
-#[derive(Debug, EnumIter)]
+#[derive(Debug, Clone, Eq, PartialEq, EnumIter, Serialize, Deserialize)]
 pub enum Colours {
     White,
     Blue,
@@ -585,7 +586,7 @@ impl fmt::Display for Colours {
 
 /************************************** Card and Deck ***************************************************/
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Card {
     pub cmc: f32,
     pub mana_cost: String,
@@ -647,7 +648,7 @@ impl Card {
         }
      }
 }
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Deck{
     pub name: String,
     pub commander: Vec<Card>,
@@ -734,7 +735,37 @@ impl Deck {
             Err(e) => return Err(e),
         }
     }  
-    fn load(identifier: String){}
-    fn save(deck: Deck){}
+    pub fn load(identifier: &String) -> CEResult<Deck> {
+        use serde_json::Value;
+
+        let save = String::from("save/");
+        let path = format!("{}{}", save, identifier);
+      
+
+        match File::open(path) {
+            Ok(t) => {
+               
+                let deck = serde_json::from_reader(t).expect("Saved deck no proper json");
+
+                println!("Deck successfully opened"); 
+               
+                Ok(deck) 
+            },
+            Err(_) => Err(CEerror::DatabaseError),
+        }
+
+    }
+    pub fn save(deck: &Deck){
+        let save = String::from("save/");
+        serde_json::to_writer(&File::create(format!("{}{}",save, deck.name)).expect("Can not folder save/ not found"),
+        &deck).expect("Can not write Deck"); 
+    }
+    fn new(name: String, commander: Vec<Card>, library: Vec<Card>) -> Deck {
+        Deck{
+            name: name,
+            commander: commander,
+            library: library,
+        }
+    }
 }
 /********************************************************************************************************/

@@ -171,7 +171,7 @@ pub mod scryfall {
                                 if v["code"] == "not_found".to_string() {
                                     println!("Bulk-Data temporally not available");
                                 }
-                                return database::save(t);
+                                return database::save(&t);
                             },
                             Err(_) => return Err(CEerror::APIError), 
                         }
