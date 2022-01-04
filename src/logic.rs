@@ -67,7 +67,7 @@ pub mod thread_fn {
                 drop(tx3);
                 
                 for card in rx {
-                    if card.commander == false {
+                    if !card.commander{
                         deck.library.push(card);
                     } else {
                         deck.commander.push(card);
@@ -116,7 +116,7 @@ pub mod thread_fn {
             quantity_card[1] = quantity_card[1].replace(" *CMDR*", "");
         }
 
-        if quantity_card[1].contains("/") {
+        if quantity_card[1].contains("/") && !quantity_card[1].contains("//") {
             quantity_card[1] = quantity_card[1].replace("/", "//");
         }
 

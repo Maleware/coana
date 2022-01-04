@@ -670,8 +670,7 @@ impl Deck {
         if deck.commander.len() == 0 {
             let mut commander_new: Vec<Card> = Vec::new();
 
-            println_verbose!(verbose, "Loaded Deck {}: Commander is missing", &deck.name);
-            println!("Found missing commander! Please type your commander(Commander1-Commander2): ");
+            println!("Found missing commander for {}! Please type your commander(Commander1-Commander2): ", &deck.name);
             
             let input = user_import::user_input();
             let mut index = 0;
@@ -725,10 +724,12 @@ impl Deck {
 
             } else {
                 println_verbose!(verbose, "Deckcheck completed: Ok");
+                Deck::save(&deck);
                 Ok(deck)
             }
         } else {
             println_verbose!(verbose, "Deckcheck completed: Ok");
+            Deck::save(&deck);
             Ok(deck)
         }
     }

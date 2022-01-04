@@ -1,4 +1,7 @@
+use std::{fs, io};
+
 use clap::{App, Arg, ArgMatches};
+
 use types::CEResult;
 
 use crate::{types::{Deck}, logic::database};
@@ -26,7 +29,7 @@ pub fn check_deck (offline: bool, verbose: bool, input: String) -> CEResult<Deck
         Ok(t) => {
            return Deck::check(t, verbose, offline);
         },
-        Err(e) => {
+        Err(_) => {
             println!("Deck not saved, build new deck from {}", &input);
             match Deck::make(input) {
                 Ok(t) => {
@@ -38,7 +41,31 @@ pub fn check_deck (offline: bool, verbose: bool, input: String) -> CEResult<Deck
     }
 }
 
+pub fn load_register(offline: bool, verbose: bool, input: String) -> CEResult<Vec<Deck>> {
+    let entries = fs::read_dir(&input).expect("Can not open path")
+    .map(|res| res.map(|e| e.path()))
+    .collect::<Result<Vec<_>, io::Error>>().expect("Can not collect entries");
 
+
+    let mut decklists: Vec<String> = Vec::new();
+    let mut decks: Vec<Deck> = Vec::new();
+
+    for path in entries {
+        println_verbose!(verbose, "Path {:?}", &path);
+        decklists.push(path.into_os_string().into_string().expect("Path not UFT8 formated").replace(&input, "")); 
+    }
+
+    for decklist in decklists {
+        println_verbose!(verbose, "Make deck of {:?}", &decklist);
+        match check_deck(offline, verbose,  decklist.to_string()) {
+            Ok(t) => decks.push(t),
+            Err(e) => println!("Can not build {} because {}", &decklist, e),
+        }
+    }
+    
+    Ok(decks)
+
+}
 
 fn main() {
     let args = get_app().get_matches();
@@ -51,23 +78,36 @@ fn main() {
 
     // update routine to load or check neccessary data
     check_database(offline, verbose);
-    
-    match check_deck( offline, verbose, input.to_string()) {
-        Ok(t) => {
-            println!("Deck name: {}", t.name);
-            for card in &t.library {
-                println!("Card: {} CMC: {}", &card.name, &card.mana_cost );
-                println!("Zones: {:?} , Type: {:?} ,\n  Keys: {:?} Keywords: {:?}\n Cartypes in Oracle: {:?} \n Backside: {:?}",
-                 card.zones, card.cardtype, card.keys, card.keywords, card.oracle_types, card.backside);
-            }
-            for commander in &t.commander{
-                println!("\n Commander: {:?}", commander);
-            }
+   
+    if register {
+        match load_register(offline, verbose, input.to_string()) {
+            Ok(t) => {
+                for deck in &t {
+                    Deck::save(deck);
+                }
+            },
+            Err(e) => println!("{}", e),
+        }
+    } else {
+         // passing check_deck, struct Deck is complete and correct
+        match check_deck( offline, verbose, input.to_string()) {
+            Ok(t) => {
+                println!("Deck name: {}", t.name);
+                for card in &t.library {
+                    println!("Card: {} CMC: {}", &card.name, &card.mana_cost );
+                    println!("Zones: {:?} , Type: {:?} ,\n  Keys: {:?} Keywords: {:?}\n Cartypes in Oracle: {:?} \n Backside: {:?}",
+                    card.zones, card.cardtype, card.keys, card.keywords, card.oracle_types, card.backside);
+                }
+                for commander in &t.commander{
+                    println!("\n Commander: {:?}", commander);
+                }
 
-            Deck::save(&t);  
-        },
-        Err(e) => println!("Error: {}", e),
+                Deck::save(&t);  
+            },
+            Err(e) => println!("Error: {}", e),
+        }
     }
+   
     
 }
 
