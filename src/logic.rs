@@ -94,7 +94,7 @@ pub mod thread_fn {
             Ok(t) => {
                 match Card::make(&t, commander) {
                     Ok(t) => {
-                        println!("Fetched Card:{} {}",&quantity_card[0], t.name);
+                        println!("Scryfall: {} {}",&quantity_card[0], t.name);
                         for _j in 0..quantity_card[0].parse::<u8>().expect("List format error: No integer.") {   
                             tx.send(t.clone()).expect("Thread can not send.");
                         }    
@@ -125,7 +125,7 @@ pub mod thread_fn {
             Ok(t) => {
                 match Card::make(&t.to_string(), commander) {
                     Ok(t) => {
-                        println!("Database Card:{} {}",&quantity_card[0], t.name);
+                        println!("Database: {} {}",&quantity_card[0], t.name);
                         for _j in 0..quantity_card[0].parse::<u8>().expect("List format error: No integer.") {   
                             tx.send(t.clone()).expect("Thread can not send");
                         }
