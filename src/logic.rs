@@ -288,7 +288,7 @@ pub mod card_build {
         let mut result: Vec<Keywords> = Vec::new();
 
         for keyword in Keywords::iter() {
-            if input.to_lowercase().contains(&keyword.to_string().to_lowercase()) {
+            if input.to_lowercase().contains(&keyword.to_string().to_lowercase().replace("_", " ")) {
                 result.push(keyword); 
             }
         }
