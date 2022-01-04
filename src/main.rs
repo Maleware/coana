@@ -48,7 +48,7 @@ fn main() {
                  card.zones, card.cardtype, card.keys, card.keywords, card.oracle_types, card.backside);
             }
             for commander in &t.commander{
-                println!("Commander: {}", commander.name);
+                println!("\n Commander: {:?}", commander);
             }
 
             Deck::save(&t);  

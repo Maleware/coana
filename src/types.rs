@@ -1,3 +1,5 @@
+#![allow(non_camel_case_types)]
+
 
 use std::{fmt, error, thread,sync::{Arc, mpsc}, fs::* };
 use strum_macros::EnumIter;
@@ -653,80 +655,11 @@ pub struct Deck{
 }
 impl Deck {
     pub fn make(input: String)-> CEResult<Deck>{
-        use serde_json::Value;
-
-        let mut deck = Deck::new(String::from(&input), Vec::<Card>::new(), Vec::<Card>::new(), );
-
-        match user_import::decklist(input) {
-
-            Ok(t) => {
-                let (tx, rx) = mpsc::channel();
-                let tx1 = tx.clone();
-                let tx2 = tx.clone();
-                let tx3 = tx.clone();
-
-                let tasks = Arc::new(t);
-                let tasks_arc_clone1 = Arc::clone(&tasks);
-                let tasks_arc_clone2 = Arc::clone(&tasks);
-                let tasks_arc_clone3 = Arc::clone(&tasks);
-
-                let quater_one = tasks.len() / 4;
-                let quater_two = tasks.len() / 2;
-                let quater_three = 3 * tasks.len() / 4;          
-
-                // Little hack to pass through a valid Value to get the API function when load failed
-                let replace: Value = serde_json::from_str("{\"value\": \"Database not loaded\"}").expect("Fatal error: Can not build replacement json");
-
-                let database_unwrap: Value = match logic::database::load() {
-                    Ok(t) => t,
-                    Err(_) => {
-                        println!("Can not open database, threads default to api request");
-                        replace
-                    },
-                };
-
-                let database = Arc::new(database_unwrap);
-                let database_arc_clone1 = Arc::clone(&database);
-                let database_arc_clone2 = Arc::clone(&database);
-                let database_arc_clone3 = Arc::clone(&database);
-
-                let handle1 = thread::spawn(move || {
-                    for i in 0..quater_one{
-                        thread_fn::thread_card_make(&tasks_arc_clone1, &tx, &i, &database_arc_clone1);
-                    }        
-                });
-                let handle2 = thread::spawn(move || { 
-                    for i in quater_one..quater_two {
-                        thread_fn::thread_card_make(&tasks_arc_clone2, &tx1, &i, &database_arc_clone2); 
-                    } 
-                });
-                let handle3 = thread::spawn(move || {
-                    for i in quater_two..quater_three {
-                        thread_fn::thread_card_make(&tasks_arc_clone3, &tx2, &i, &database_arc_clone3);
-                    } 
-                });
-                
-                for i in quater_three..tasks.len() {
-                    thread_fn::thread_card_make(&tasks, &tx3, &i, &database);
-                } 
-                
-
-                drop(tx3);
-                
-                for card in rx {
-                    if card.commander == false {
-                        deck.library.push(card);
-                    } else {
-                        deck.commander.push(card);
-                    } 
-                }
-                handle1.join().expect("Can not join thread");
-                handle2.join().expect("Can not join thread");
-                handle3.join().expect("Can not join thread");
-                return Ok(deck);
-            },
-            Err(e) => return Err(e),
-        }
+       use logic::thread_fn::deck; 
+       match deck(input) {
+           Ok(t) => Ok(t),
+           Err(e) => Err(e),
+       }
     }  
     pub fn load(identifier: &String) -> CEResult<Deck> {
 
@@ -748,7 +681,7 @@ impl Deck {
         serde_json::to_writer(&File::create(format!("{}{}",save, deck.name)).expect("Can not folder save/ not found"),
         &deck).expect("Can not write Deck"); 
     }
-    fn new(name: String, commander: Vec<Card>, library: Vec<Card>) -> Deck {
+    pub fn new(name: String, commander: Vec<Card>, library: Vec<Card>) -> Deck {
         Deck{
             name: name,
             commander: commander,

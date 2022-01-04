@@ -1,12 +1,87 @@
 /******************************* Functions for Threads **************************************/
 pub mod thread_fn {
     use std::{thread, sync::{mpsc, Arc}, time::Duration};
-    use crate::import::{user_import::quantity_card, self};
-    use crate::types::Card;
+    use crate::{import::{user_import::{quantity_card, decklist}, self }, types::CEResult};
+    use crate::types::{Card, Deck};
+    use crate::logic::database;
 
-    use super::database;
+    pub fn deck(input: String) -> CEResult<Deck> {
+        use serde_json::Value;
 
-    pub fn thread_card_make_api(decklist: &Arc<Vec<String>> , tx: &mpsc::Sender<Card> , i: &usize) {
+        let mut deck = Deck::new(String::from(&input), Vec::<Card>::new(), Vec::<Card>::new(), );
+
+        match decklist(input) {
+
+            Ok(t) => {
+                let (tx, rx) = mpsc::channel();
+                let tx1 = tx.clone();
+                let tx2 = tx.clone();
+                let tx3 = tx.clone();
+
+                let tasks = Arc::new(t);
+                let tasks_arc_clone1 = Arc::clone(&tasks);
+                let tasks_arc_clone2 = Arc::clone(&tasks);
+                let tasks_arc_clone3 = Arc::clone(&tasks);
+
+                let quater_one = tasks.len() / 4;
+                let quater_two = tasks.len() / 2;
+                let quater_three = 3 * tasks.len() / 4;          
+
+                // Little hack to pass through a valid Value to get the API function when load failed
+                let replace: Value = serde_json::from_str("{\"value\": \"Database not loaded\"}").expect("Fatal error: Can not build replacement json");
+
+                let database_unwrap: Value = match database::load() {
+                    Ok(t) => t,
+                    Err(_) => {
+                        println!("Can not open database, threads default to api request");
+                        replace
+                    },
+                };
+
+                let database = Arc::new(database_unwrap);
+                let database_arc_clone1 = Arc::clone(&database);
+                let database_arc_clone2 = Arc::clone(&database);
+                let database_arc_clone3 = Arc::clone(&database);
+
+                let handle1 = thread::spawn(move || {
+                    for i in 0..quater_one{
+                        thread_card_make(&tasks_arc_clone1, &tx, &i, &database_arc_clone1);
+                    }        
+                });
+                let handle2 = thread::spawn(move || { 
+                    for i in quater_one..quater_two {
+                        thread_card_make(&tasks_arc_clone2, &tx1, &i, &database_arc_clone2); 
+                    } 
+                });
+                let handle3 = thread::spawn(move || {
+                    for i in quater_two..quater_three {
+                        thread_card_make(&tasks_arc_clone3, &tx2, &i, &database_arc_clone3);
+                    } 
+                });
+                
+                for i in quater_three..tasks.len() {
+                    thread_card_make(&tasks, &tx3, &i, &database);
+                } 
+                
+
+                drop(tx3);
+                
+                for card in rx {
+                    if card.commander == false {
+                        deck.library.push(card);
+                    } else {
+                        deck.commander.push(card);
+                    } 
+                }
+                handle1.join().expect("Can not join thread");
+                handle2.join().expect("Can not join thread");
+                handle3.join().expect("Can not join thread");
+                return Ok(deck);
+            },
+            Err(e) => return Err(e),
+        }
+    }
+    fn thread_card_make_api(decklist: &Arc<Vec<String>> , tx: &mpsc::Sender<Card> , i: &usize) {
         let mut commander: bool = false;
         let mut quantity_card = quantity_card(&decklist[*i]).expect("Incompatible decklist format");
 
@@ -31,7 +106,7 @@ pub mod thread_fn {
             Err(e) => println!("Thread error detected: {}", e),
         }
     }
-    pub fn thread_card_make(decklist: &Arc<Vec<String>> , tx: &mpsc::Sender<Card> , i: &usize, database: &Arc<serde_json::Value>){ 
+    fn thread_card_make(decklist: &Arc<Vec<String>> , tx: &mpsc::Sender<Card> , i: &usize, database: &Arc<serde_json::Value>){ 
         let mut commander: bool = false;
         let mut quantity_card = quantity_card(&decklist[*i]).expect("Incompatible decklist format");
 
@@ -226,11 +301,16 @@ pub mod card_build {
     }
     fn oracle_types(input: String) -> Option<Vec<CardType>> {
         let mut result: Vec<CardType> = Vec::new();
+        let mut buffer: Vec<CardType> = Vec::new();
 
         for types in CardType::iter() {
             if input.to_string().to_lowercase().contains(&types.to_string().replace("([])", "").to_lowercase()) {
-                result.push(types);
+                buffer.push(types);
             }
+        }
+
+        for types in buffer {
+            result.push(get_type(&input, types));
         }
 
         if result.len() != 0 {
@@ -327,7 +407,8 @@ pub mod card_build {
             
             },
             CardType::Planeswalker => { return CardType::Planeswalker; },
-            _ => { return CardType::InvalidCardType; }, 
+            CardType::Token => {return CardType::Token},
+            CardType::InvalidCardType => { return CardType::InvalidCardType; }, 
         }
     }
 }
