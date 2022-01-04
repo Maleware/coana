@@ -1,10 +1,6 @@
 use std::{fs, io};
-
-use clap::{App, Arg, ArgMatches};
-
-use types::CEResult;
-
-use crate::{types::{Deck}, logic::database};
+use clap::{App, Arg};
+use crate::{types::{Deck, CEResult}, logic::database};
 
 mod types;
 mod import;
@@ -51,7 +47,7 @@ pub fn load_register(offline: bool, verbose: bool, input: String) -> CEResult<Ve
     let mut decks: Vec<Deck> = Vec::new();
 
     for path in entries {
-        println_verbose!(verbose, "Path {:?}", &path);
+        println_verbose!(verbose, "Queue: {:?}", &path);
         decklists.push(path.into_os_string().into_string().expect("Path not UFT8 formated").replace(&input, "")); 
     }
 

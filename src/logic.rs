@@ -258,7 +258,7 @@ pub mod card_build {
         let mut result: Vec<Keys> = Vec::new();
 
         for key in Keys::iter() {
-            if input.to_lowercase().contains(&key.to_string().to_lowercase()) {
+            if input.to_lowercase().contains(&key.to_string().to_lowercase().replace("_", " ")) {
                 result.push(key);
             }
         }
@@ -324,7 +324,7 @@ pub mod card_build {
             CardType::Creature(_) => {
                 let mut buffer: Vec<Option<CreatureSubtype>> = Vec::new();
                 for item in CreatureSubtype::iter() {
-                    if input.to_lowercase().contains(&item.to_string().to_lowercase()) { 
+                    if input.to_lowercase().contains(&item.to_string().to_lowercase().replace("_", " ")) { 
                         buffer.push(Some(item));
                     }
                 }
@@ -338,7 +338,7 @@ pub mod card_build {
             CardType::Artifact(_) => {
                 let mut buffer: Vec<Option<ArtifactSubtype>> = Vec::new();
                 for item in ArtifactSubtype::iter() {
-                    if input.to_lowercase().contains(&item.to_string().to_lowercase()) { 
+                    if input.to_lowercase().contains(&item.to_string().to_lowercase().replace("_", " ")) { 
                         buffer.push(Some(item));
                     }
                 }
@@ -352,7 +352,7 @@ pub mod card_build {
             CardType::Enchantment(_) => {
                 let mut buffer: Vec<Option<EnchantmentSubtype>> = Vec::new();
                 for item in EnchantmentSubtype::iter() {
-                    if input.to_lowercase().contains(&item.to_string().to_lowercase()) { 
+                    if input.to_lowercase().contains(&item.to_string().to_lowercase().replace("_", " ")) { 
                         buffer.push(Some(item));
                     }
                 }
@@ -366,7 +366,7 @@ pub mod card_build {
             CardType::Instant(_) => {
                 let mut buffer: Vec<Option<SpellSubtype>> = Vec::new();
                 for item in SpellSubtype::iter() {
-                    if input.to_lowercase().contains(&item.to_string().to_lowercase()) { 
+                    if input.to_lowercase().contains(&item.to_string().to_lowercase().replace("_", " ")) { 
                         buffer.push(Some(item));
                     }
                 }
@@ -380,7 +380,7 @@ pub mod card_build {
             CardType::Land(_) => {
                 let mut buffer: Vec<Option<LandSubtype>> = Vec::new();
                 for item in LandSubtype::iter() {
-                    if input.to_lowercase().contains(&item.to_string().to_lowercase()) { 
+                    if input.to_lowercase().contains(&item.to_string().to_lowercase().replace("_", " ")) { 
                         buffer.push(Some(item));
                     }
                 }
@@ -394,7 +394,7 @@ pub mod card_build {
             CardType::Sorcery(_) => {
                 let mut buffer: Vec<Option<SpellSubtype>> = Vec::new();
                 for item in SpellSubtype::iter() {
-                    if input.to_lowercase().contains(&item.to_string().to_lowercase()) { 
+                    if input.to_lowercase().contains(&item.to_string().to_lowercase().replace("_", " ")) { 
                         buffer.push(Some(item));
                     }
                 }
@@ -406,9 +406,9 @@ pub mod card_build {
                 } 
             
             },
-            CardType::Planeswalker => { return CardType::Planeswalker; },
-            CardType::Token => {return CardType::Token},
-            CardType::InvalidCardType => { return CardType::InvalidCardType; }, 
+            CardType::Planeswalker => { return CardType::Planeswalker },
+            CardType::Token => { return CardType::Token },
+            CardType::InvalidCardType => { return CardType::InvalidCardType }, 
         }
     }
 }

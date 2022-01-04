@@ -91,7 +91,7 @@ Archon,
 Army,
 Artificer,
 Assassin,
-AssemblyWorker, // Name on card: Assembly-Worker
+Assembly_Worker, // Name on card: Assembly-Worker
 Atog,
 Aurochs,
 Avatar,
