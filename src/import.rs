@@ -38,15 +38,6 @@ pub mod user_import {
     }
 }
 
-// Still needed as fallback, make default *CMDR* in list.
-    pub fn commander_select(commander: &String) -> Vec<String> {
-    let commander: Vec<String> = commander
-        .trim()
-        .split("+")
-        .flat_map(str::parse::<String>)
-        .collect::<Vec<String>>();
-    commander
-}
 
 // Needed if user interaction is required
     pub fn user_input() -> Vec<String> {
