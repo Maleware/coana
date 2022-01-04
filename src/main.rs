@@ -1,20 +1,14 @@
 use clap::{App, Arg, ArgMatches};
+use types::CEResult;
 
-use crate::{types::Deck, logic::database};
+use crate::{types::{Deck}, logic::database};
 
 mod types;
 mod import;
 mod logic;
 
-macro_rules! println_verbose {
-    ($verbose:expr, $($arg:tt)*) => {
-        if $verbose {
-            println!($($arg)*);
-        }
-    };
-}
 
-pub fn database(offline: bool, verbose: bool) {
+pub fn check_database(offline: bool, verbose: bool) {
      
     if !offline {
         println_verbose!(verbose, "Online - Mode active, checking on updates");
@@ -27,6 +21,25 @@ pub fn database(offline: bool, verbose: bool) {
     }
 }
 
+pub fn check_deck (offline: bool, verbose: bool, input: String) -> CEResult<Deck> {
+    match Deck::load(&input, verbose) {
+        Ok(t) => {
+           return Deck::check(t, verbose, offline);
+        },
+        Err(e) => {
+            println!("Deck not saved, build new deck from {}", &input);
+            match Deck::make(input) {
+                Ok(t) => {
+                    return Deck::check(t, verbose, offline);
+                }, 
+                Err(e) => Err(e),
+            }
+        },
+    }
+}
+
+
+
 fn main() {
     let args = get_app().get_matches();
     
@@ -37,9 +50,9 @@ fn main() {
     println_verbose!(verbose, "Verbose is active");
 
     // update routine to load or check neccessary data
-    database(offline, verbose);
+    check_database(offline, verbose);
     
-    match Deck::make(input.to_string()) {
+    match check_deck( offline, verbose, input.to_string()) {
         Ok(t) => {
             println!("Deck name: {}", t.name);
             for card in &t.library {
@@ -62,7 +75,7 @@ fn get_app() -> App<'static, 'static>{
     App::new("mtg analyizer")
     .version("0.1")
     .author("Maximilian Wittich <maxi.wittich@outlook.com>")
-    .about("Reads moxfield mtgo export lists to analyze the deck.")
+    .about("Reads moxfield mtgo export lists to analyze the deck. Please add *CMDR* in the line your commander is")
     .arg(
         Arg::with_name("input")
         .required(true)

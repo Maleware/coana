@@ -55,6 +55,7 @@ pub mod user_import {
         .read_line(&mut input)
         .expect("Failed to read user input");
     let input_vec = input.trim().split('-').flat_map(str::parse::<String>).collect::<Vec<String>>();
+    println!("{:?}", &input_vec);
     input_vec
 }
 }
@@ -100,7 +101,7 @@ pub mod scryfall {
     }
     fn exact_request(cardname: &String) -> CEResult<String> {
         let mut api = String::from("https://api.scryfall.com/cards/named?exact=");
-        api = format!("{}, {}", api, *cardname);
+        api = format!("{}{}", api, *cardname);
     
         let request = match blocking::get(api) {
                 Ok(t) => match t.text() {

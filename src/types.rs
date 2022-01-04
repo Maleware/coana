@@ -1,12 +1,12 @@
 #![allow(non_camel_case_types)]
 
 
-use std::{fmt, error, thread,sync::{Arc, mpsc}, fs::* };
+use std::{fmt, error, fs::* };
 use strum_macros::EnumIter;
 use serde::{Serialize, Deserialize};
 
-use crate::import::user_import;
-use crate::logic::{thread_fn, self};
+
+use crate::logic;
 
 
 /************************************** Macros ***********************************************************/
@@ -18,6 +18,15 @@ macro_rules! impl_fmt {
                 write!(f, "{:?}", self)
             }
         })*
+    };
+}
+
+#[macro_export]
+macro_rules! println_verbose {
+    ($verbose:expr, $($arg:tt)*) => {
+        if $verbose {
+            println!($($arg)*);
+        }
     };
 }
 /************************************** Errors **********************************************************/
@@ -654,6 +663,75 @@ pub struct Deck{
     pub library: Vec<Card>,
 }
 impl Deck {
+    pub fn check(mut deck: Deck, verbose: bool, offline: bool) -> CEResult<Deck>{
+        use crate::import::{scryfall, user_import};
+        use crate::database;
+        
+        if deck.commander.len() == 0 {
+            let mut commander_new: Vec<Card> = Vec::new();
+
+            println_verbose!(verbose, "Loaded Deck {}: Commander is missing", &deck.name);
+            println!("Found missing commander! Please type your commander(Commander1-Commander2): ");
+            
+            let input = user_import::user_input();
+            let mut index = 0;
+            let mut index_buffer: Vec<usize> = Vec::new();      
+            // most cases, card is in provided decklist just not *CMDR* setted
+            for card in &deck.library {
+                for commmander in &input {
+                    if card.name.to_lowercase().contains(&commmander.to_lowercase()) {
+                        deck.commander.push(card.clone());
+                        index_buffer.push(index);
+                        println_verbose!(verbose, "Found commander in deck");
+                    }
+                }
+                index += 1;
+            }
+            // only removes if commander found in deck
+            for index in &index_buffer {
+                deck.library.remove(*index);
+            }
+
+            if index_buffer.len() == 0 {
+                if offline {
+                    match database::load() {
+                        Ok(t) => {
+                            for commander in input {
+                            commander_new.push(Card::make(&database::get(&commander, &t)?.to_string(), true)?);
+                            }
+                        },
+                        Err(_) => {
+                            panic!("Database can not be loaded, unrecoverable error for offline-modus");
+                        },
+                    }
+                } else {
+                    for commander in input {
+                        commander_new.push(Card::make(&scryfall::get(&commander)?, true)?);
+                        println_verbose!(verbose, "{:?}", commander_new);
+                    }
+                }
+
+                deck.commander = commander_new;
+
+                println_verbose!(verbose, "Library: {}, Commander: {:?}", deck.library.len(), deck.commander);
+
+                if deck.commander.len() + deck.library.len() == 100 {
+                    println_verbose!(verbose, "Deck complete, save deck");
+                    Deck::save(&deck);
+                    return Ok(deck);
+                } else {
+                    panic!("Deck size not 100, deck corrupted");
+                }
+
+            } else {
+                println_verbose!(verbose, "Deckcheck completed: Ok");
+                Ok(deck)
+            }
+        } else {
+            println_verbose!(verbose, "Deckcheck completed: Ok");
+            Ok(deck)
+        }
+    }
     pub fn make(input: String)-> CEResult<Deck>{
        use logic::thread_fn::deck; 
        match deck(input) {
@@ -661,7 +739,7 @@ impl Deck {
            Err(e) => Err(e),
        }
     }  
-    pub fn load(identifier: &String) -> CEResult<Deck> {
+    pub fn load(identifier: &String, verbose: bool) -> CEResult<Deck> {
 
         let save = String::from("save/");
         let path = format!("{}{}", save, identifier);
@@ -669,7 +747,7 @@ impl Deck {
         match File::open(path) {
             Ok(t) => {
                 let deck = serde_json::from_reader(t).expect("Saved deck no proper json");
-                println!("Deck successfully opened"); 
+                println_verbose!(verbose, "Deck successfully opened"); 
                
                 Ok(deck) 
             },
