@@ -408,6 +408,7 @@ pub mod card_build {
             },
             CardType::Planeswalker => { return CardType::Planeswalker },
             CardType::Token => { return CardType::Token },
+            CardType::Basic => { return CardType::Basic},
             CardType::InvalidCardType => { return CardType::InvalidCardType }, 
         }
     }

@@ -57,8 +57,8 @@ pub enum CardType{
     Land(Vec<Option<LandSubtype>>),
     Planeswalker,
     Token,
-    InvalidCardType,
-}
+    Basic,
+    InvalidCardType, }
 #[derive(Debug, Clone,Eq, PartialEq, EnumIter, Serialize, Deserialize)]
 pub enum ArtifactSubtype{
     Blood, 
@@ -382,6 +382,7 @@ impl_fmt!(for CardType, ArtifactSubtype, SpellSubtype, CreatureSubtype, Enchantm
 #[derive(Debug, Clone, Eq, PartialEq, EnumIter, Serialize, Deserialize)]
 pub enum Keys{
     Add,
+    Enter,
     Cast,
     Exile,
     Destroy,
@@ -406,11 +407,23 @@ pub enum Keys{
     All,
     Each,
     Every,
+    White,
+    Blue,
+    Black,
+    Red,
+    Green,
+    Colourless,
 }
 impl fmt::Display for Keys {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             &Keys::Tap => write!(f, "{}","{T}"),
+            &Keys::Black => write!(f, "{}","{B}"),
+            &Keys::Blue => write!(f, "{}","{U}"),
+            &Keys::White => write!(f, "{}","{W}"),
+            &Keys::Green => write!(f, "{}","{G}"),
+            &Keys::Red => write!(f, "{}","{R}"),
+            &Keys::Colourless => write!(f, "{}","{C}"),
             _ => write!(f, "{:?}", self),
         }
     }
@@ -582,6 +595,7 @@ pub enum Colours {
     Black,
     Red,
     Green,
+    Colourless,
 }
 impl_fmt!(for Zones, Keywords);
 
@@ -597,6 +611,7 @@ impl fmt::Display for Colours {
                 Colours::White => "{W}",
                 Colours::Green => "{G}",
                 Colours::Red => "{R}",
+                Colours::Colourless => "{C}"
             }
         )
     }
