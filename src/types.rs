@@ -1,8 +1,8 @@
 #![allow(non_camel_case_types)]
 
 
-use std::{fmt, error, fs::* };
-use strum_macros::EnumIter;
+use std::{fmt::{self, Debug}, error, fs::* };
+use strum_macros::{EnumIter};
 use serde::{Serialize, Deserialize};
 
 
@@ -381,6 +381,7 @@ impl_fmt!(for CardType, ArtifactSubtype, SpellSubtype, CreatureSubtype, Enchantm
 
 #[derive(Debug, Clone, Eq, PartialEq, EnumIter, Serialize, Deserialize)]
 pub enum Keys{
+    Add,
     Cast,
     Exile,
     Destroy,
@@ -406,8 +407,14 @@ pub enum Keys{
     Each,
     Every,
 }
-
-// pub enum Effects{}
+impl fmt::Display for Keys {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            &Keys::Tap => write!(f, "{}","{T}"),
+            _ => write!(f, "{:?}", self),
+        }
+    }
+}
 #[derive(Debug, Clone, Eq, PartialEq, EnumIter, Serialize, Deserialize)]
 pub enum Keywords{
     Deathtouch,
@@ -576,7 +583,8 @@ pub enum Colours {
     Red,
     Green,
 }
-impl_fmt!(for Keys, Zones, Keywords);
+impl_fmt!(for Zones, Keywords);
+
 
 impl fmt::Display for Colours {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -596,6 +604,8 @@ impl fmt::Display for Colours {
 
 
 /************************************** Card and Deck ***************************************************/
+
+
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Card {
@@ -769,4 +779,3 @@ impl Deck {
         }
     }
 }
-/********************************************************************************************************/

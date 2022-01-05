@@ -5,7 +5,7 @@ use crate::{types::{Deck, CEResult}, logic::database};
 mod types;
 mod import;
 mod logic;
-
+mod statistic;
 
 pub fn check_database(offline: bool, verbose: bool) {
      
@@ -19,7 +19,6 @@ pub fn check_database(offline: bool, verbose: bool) {
         // import::combo::load().expect("Can not load combo data, fatal in offline modus");
     }
 }
-
 pub fn check_deck (offline: bool, verbose: bool, input: String) -> CEResult<Deck> {
     match Deck::load(&input, verbose) {
         Ok(t) => {
@@ -36,7 +35,6 @@ pub fn check_deck (offline: bool, verbose: bool, input: String) -> CEResult<Deck
         },
     }
 }
-
 pub fn load_register(offline: bool, verbose: bool, input: String) -> CEResult<Vec<Deck>> {
     let entries = fs::read_dir(&input).expect("Can not open path")
     .map(|res| res.map(|e| e.path()))
@@ -82,7 +80,7 @@ fn main() {
                     Deck::save(deck);
                 }
             },
-            Err(e) => println!("{}", e),
+            Err(e) => println!("Error: {}", e),
         }
     } else {
          // passing check_deck, struct Deck is complete and correct
