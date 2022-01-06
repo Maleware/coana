@@ -417,6 +417,7 @@ pub enum Keys{
     Red,
     Green,
     Colourless,
+    ETB,
 }
 impl fmt::Display for Keys {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -428,6 +429,7 @@ impl fmt::Display for Keys {
             &Keys::Green => write!(f, "{}","{G}"),
             &Keys::Red => write!(f, "{}","{R}"),
             &Keys::Colourless => write!(f, "{}","{C}"),
+            &Keys::ETB => write!(f, "{}", "enters the battlefield"),
             _ => write!(f, "{:?}", self),
         }
     }
@@ -587,7 +589,6 @@ pub enum Restrictions {
     Pay,
     Can,
     CanT,
-    ETB,
   //  ETBPayoff,
     Whenever,
     Another,
@@ -610,7 +611,7 @@ pub enum Restrictions {
     Eleven,
     Twelve,
     Xis, // to x is 
-    Xor, // to xo or
+    Xor, // to x or
     PlusSymbol,
     MinusSymbol,
     Minus,
@@ -651,7 +652,6 @@ impl fmt::Display for Restrictions{
         match self {
             &Restrictions::EoT => write!(f, "{}", "end of turn"),
             &Restrictions::CanT => write!(f,"{}", "Can't"),
-            &Restrictions::ETB => write!(f, "{}", "enters the battlefield"),
             &Restrictions::One => write!(f, "{}", "1"),
             &Restrictions::Two => write!(f, "{}", "2"),
             &Restrictions::Three => write!(f, "{}", "3"),
