@@ -3,13 +3,16 @@
 
 pub mod basic {
     use crate::types::*;
-    pub struct basic<'deck> {
-        pub cardtype: Cardtype<'deck>, 
+    use std::collections::BTreeMap;
+    pub struct Basic<'deck> {
+        pub cardtype: Cardtype<'deck>,
+        pub mana_cost: BTreeMap<u8, Vec<&'deck Card>> 
     }
-    impl <'deck> basic<'deck> {
-        pub fn new(deck: &Deck) -> basic {
-            basic {
+    impl <'deck> Basic<'deck> {
+        pub fn new(deck: &Deck) -> Basic {
+            Basic {
                 cardtype: cardtype(deck),
+                mana_cost: mana_cost(deck),
             }
         }
     }
@@ -56,7 +59,20 @@ pub mod basic {
             sorcerys,
         }
     }
-    pub fn mana_cost(deck: &Deck) {}
+    pub fn mana_cost(deck: &Deck) -> BTreeMap<u8, Vec<&Card>> {
+        let mut mana_cost = BTreeMap::new();
+
+        for card in &deck.library {
+            for types in &card.cardtype{
+                match types {
+                    CardType::Land(_) => (),
+                    _ => mana_cost.entry(card.cmc as u8).or_insert(vec![card]).push(card),
+                }
+            }
+        }
+
+        mana_cost 
+    }
     pub fn mana_distribution(deck: &Deck) {}
     pub fn effect(deck: &Deck) {} 
 }
