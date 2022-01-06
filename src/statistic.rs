@@ -3,16 +3,20 @@
 
 pub mod basic {
     use crate::types::*;
-    use std::collections::BTreeMap;
+    use std::collections::{BTreeMap, HashMap};
+    use crate::types::Colors;
+    use strum::IntoEnumIterator;
     pub struct Basic<'deck> {
         pub cardtype: Cardtype<'deck>,
-        pub mana_cost: BTreeMap<u8, Vec<&'deck Card>> 
+        pub mana_cost: BTreeMap<u8, Vec<&'deck Card>>,
+        pub mana_dist: Mana_dist,
     }
     impl <'deck> Basic<'deck> {
         pub fn new(deck: &Deck) -> Basic {
             Basic {
                 cardtype: cardtype(deck),
                 mana_cost: mana_cost(deck),
+                mana_dist: mana_distribution(deck),
             }
         }
     }
@@ -25,6 +29,11 @@ pub mod basic {
         pub planeswalkers: Vec<&'deck Card>,
         pub instants: Vec<&'deck Card>,
         pub sorcerys: Vec<&'deck Card>,
+    }
+
+    pub struct Mana_dist {
+        pub manacost: HashMap<Colors, u8>,
+        pub manaprod: HashMap<Colors, u8>,
     }
     pub fn cardtype<'deck> (deck: &'deck Deck) -> Cardtype<'deck> {
         let mut creatures = Vec::new();
@@ -73,7 +82,41 @@ pub mod basic {
 
         mana_cost 
     }
-    pub fn mana_distribution(deck: &Deck) {}
+    pub fn mana_distribution(deck: &Deck) -> Mana_dist{
+        
+        let mut manacost: HashMap<Colors, u8> = HashMap::new();
+        let mut manaprod: HashMap<Colors, u8> = HashMap::new();
+
+        for card in &deck.library {
+            for color in Colors::iter() {
+                if card.mana_cost.contains(&color.to_string()) {
+                    *manacost.entry(color).or_insert(0) += card.mana_cost.matches(&color.to_string()).count() as u8;   
+                }
+            }
+            for color in Colors::iter() {
+                match &card.keys {
+                    Some(keys) => {
+                        for key in keys {
+                            if key == &color.to_key() {
+                                for key in keys {
+                                    if key == &Keys::Tap {
+                                        for key in keys {
+                                            if key == &Keys::Add {
+                                                *manaprod.entry(color.clone()).or_insert(0) += card.oracle_text.matches(&color.to_string()).count() as u8;
+                                            }
+                                        }
+                                    }
+                                } 
+                            }
+                        }
+                    },
+                    None => (),
+                }
+            }
+        }
+        return Mana_dist{ manacost, manaprod };        
+
+    }
     pub fn effect(deck: &Deck) {} 
 }
 

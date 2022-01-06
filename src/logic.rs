@@ -172,7 +172,7 @@ pub mod card_build {
     fn cmc(input: String) -> f32 {
 
         let mut i: f32 = 0.0;
-        for colour in Colours::iter() {
+        for colour in Colors::iter() {
             if input.contains(&colour.to_string()) {
                 i += 1.0;
             }

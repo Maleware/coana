@@ -1,7 +1,7 @@
 #![allow(non_camel_case_types)]
 
 
-use std::{fmt::{self, Debug}, error, fs::* };
+use std::{fmt::{self, Debug}, error, fs::*};
 use strum_macros::{EnumIter};
 use serde::{Serialize, Deserialize};
 
@@ -416,6 +416,7 @@ pub enum Keys{
     Red,
     Green,
     Colourless,
+    AnyColor,
     ETB,
 }
 impl fmt::Display for Keys {
@@ -428,6 +429,7 @@ impl fmt::Display for Keys {
             &Keys::Green => write!(f, "{}","{G}"),
             &Keys::Red => write!(f, "{}","{R}"),
             &Keys::Colourless => write!(f, "{}","{C}"),
+            &Keys::AnyColor => write!(f, "{}", "any color"),
             &Keys::ETB => write!(f, "{}", "enters the battlefield"),
             _ => write!(f, "{:?}", self),
         }
@@ -696,30 +698,44 @@ pub enum Zones{
     CommandZone,
     Library,
 }
-#[derive(Debug, Clone, Eq, PartialEq, EnumIter, Serialize, Deserialize)]
-pub enum Colours {
+#[derive(Debug, Clone, Eq, PartialEq, EnumIter, Serialize, Deserialize, Hash)]
+pub enum Colors {
     White,
     Blue,
     Black,
     Red,
     Green,
     Colourless,
+    AnyColor,
 }
 impl_fmt!(for Zones, Keywords);
+impl Colors {
+    pub fn to_key(&self) -> Keys {
+        match self {
+            Colors::White => Keys::White,
+            Colors::Blue => Keys::Blue,
+            Colors::Black => Keys::Black,
+            Colors::Red => Keys::Red,
+            Colors::Green => Keys::Green,
+            Colors::Colourless => Keys::Colourless,
+            Colors::AnyColor => Keys::AnyColor,
+        }
+    }
+}
 
-
-impl fmt::Display for Colours {
+impl fmt::Display for Colors {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(
             f,
             "{}",
             match self {
-                Colours::Black => "{B}",
-                Colours::Blue => "{U}",
-                Colours::White => "{W}",
-                Colours::Green => "{G}",
-                Colours::Red => "{R}",
-                Colours::Colourless => "{C}"
+                Colors::Black => "{B}",
+                Colors::Blue => "{U}",
+                Colors::White => "{W}",
+                Colors::Green => "{G}",
+                Colors::Red => "{R}",
+                Colors::Colourless => "{C}",
+                Colors::AnyColor => "any color"
             }
         )
     }
