@@ -89,8 +89,8 @@ fn main() {
                 println!("Deck name: {}", t.name);
                 for card in &t.library {
                     println!("Card: {} CMC: {}", &card.name, &card.mana_cost );
-                    println!("Zones: {:?} , Type: {:?} ,\n  Keys: {:?} Keywords: {:?}\n Cartypes in Oracle: {:?} \n Backside: {:?}",
-                    card.zones, card.cardtype, card.keys, card.keywords, card.oracle_types, card.backside);
+                    println!("Zones: {:?} , Type: {:?} ,\n  Keys: {:?} Keywords: {:?}\n Cartypes in Oracle: {:?} Restrictions: {:?}\n Backside: {:?}",
+                    card.zones, card.cardtype, card.keys, card.keywords, card.oracle_types, card.restrictions,card.backside);
                 }
                 for commander in &t.commander{
                     println!("\n Commander: {:?}", commander);

@@ -163,6 +163,7 @@ pub mod card_build {
             zones: zones(v["oracle_text"].to_string()),
             keywords: keywords(v["oracle_text"].to_string()),
             oracle_types: oracle_types(v["oracle_text"].to_string()),
+            restrictions: restrictions(v["oracle_text"].to_string()),
         }
     }
     fn name(input: String) -> String {  
@@ -319,6 +320,21 @@ pub mod card_build {
             return None;
         }
     }
+    fn restrictions(input: String ) -> Option<Vec<Restrictions>> {
+        let mut result: Vec<Restrictions> = Vec::new();
+
+        for restriction in Restrictions::iter() {
+            if input.to_lowercase().contains(&restriction.to_string().to_lowercase().replace("_", " ")) {
+                result.push(restriction); 
+            }
+        }
+
+        if result.len() != 0 {
+            return Some(result);
+        }else {
+            return None;
+        } 
+    }
     fn get_type(input: &String, cardtype: CardType) -> CardType {
         match cardtype {
             CardType::Creature(_) => {
@@ -408,7 +424,8 @@ pub mod card_build {
             },
             CardType::Planeswalker => { return CardType::Planeswalker },
             CardType::Token => { return CardType::Token },
-            CardType::Basic => { return CardType::Basic},
+            CardType::Basic => { return CardType::Basic },
+            CardType::Card => { return CardType::Card },
             CardType::InvalidCardType => { return CardType::InvalidCardType }, 
         }
     }

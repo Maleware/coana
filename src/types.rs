@@ -58,7 +58,9 @@ pub enum CardType{
     Planeswalker,
     Token,
     Basic,
-    InvalidCardType, }
+    InvalidCardType, 
+    Card,
+}
 #[derive(Debug, Clone,Eq, PartialEq, EnumIter, Serialize, Deserialize)]
 pub enum ArtifactSubtype{
     Blood, 
@@ -381,8 +383,9 @@ impl_fmt!(for CardType, ArtifactSubtype, SpellSubtype, CreatureSubtype, Enchantm
 
 #[derive(Debug, Clone, Eq, PartialEq, EnumIter, Serialize, Deserialize)]
 pub enum Keys{
+    Top,
+    Look,
     Add,
-    Enter,
     Cast,
     Exile,
     Destroy,
@@ -406,6 +409,7 @@ pub enum Keys{
     Token,
     All,
     Each,
+    Copy,
     Every,
     White,
     Blue,
@@ -578,7 +582,104 @@ pub enum Keywords{
     Cleave,
     Training,
 }
-
+#[derive(Debug, Clone, Eq, PartialEq, EnumIter, Serialize, Deserialize)]
+pub enum Restrictions {
+    Pay,
+    Can,
+    CanT,
+    ETB,
+  //  ETBPayoff,
+    Whenever,
+    Another,
+    May,
+    If,
+    Each,
+    All,
+    Cmc,
+    ManaValue,
+    One,
+    Two,
+    Three,
+    Four,
+    Five,
+    Six,
+    Seven,
+    Eight,
+    Nine,
+    Ten,
+    Eleven,
+    Twelve,
+    Xis, // to x is 
+    Xor, // to xo or
+    PlusSymbol,
+    MinusSymbol,
+    Minus,
+    Only,
+    Non,
+    Plus,
+    Upkeep,
+    Drawstep,
+    Untapstep,
+    MainPhase,
+    Combat,
+    Endstep,
+    Untap,
+    During,
+    AtBeginnOf,
+    MinusXX, // to -x/-x
+    PlusXX,// to +x/+x
+    Until,
+    Reveal,
+    CommanderControl,
+    Double,
+    That,
+    Many,
+    More,
+    Than,
+    Equal,
+    Trigger,
+    Without,
+    GainLife,
+    Power,
+    Toughness,
+    Less,
+    EoT,
+    Die, 
+}
+impl fmt::Display for Restrictions{
+   fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            &Restrictions::EoT => write!(f, "{}", "end of turn"),
+            &Restrictions::CanT => write!(f,"{}", "Can't"),
+            &Restrictions::ETB => write!(f, "{}", "enters the battlefield"),
+            &Restrictions::One => write!(f, "{}", "1"),
+            &Restrictions::Two => write!(f, "{}", "2"),
+            &Restrictions::Three => write!(f, "{}", "3"),
+            &Restrictions::Four => write!(f, "{}", "4"),
+            &Restrictions::Five => write!(f, "{}", "5"),
+            &Restrictions::Six => write!(f, "{}", "6"),
+            &Restrictions::Seven => write!(f, "{}", "7"),
+            &Restrictions::Eight => write!(f, "{}", "8"),
+            &Restrictions::Nine => write!(f, "{}", "9"),
+            &Restrictions::Ten => write!(f, "{}", "10"),
+            &Restrictions::Eleven => write!(f, "{}", "11"),
+            &Restrictions::Twelve => write!(f, "{}", "12"),
+            &Restrictions::AtBeginnOf => write!(f, "{}", "At the begin of"),
+            &Restrictions::Cmc => write!(f, "{}", "cmc"),
+            &Restrictions::ManaValue => write!(f, "{}", "Mana Value"),
+            &Restrictions::Xis => write!(f, "{}", "X is"),
+            &Restrictions::Xor => write!(f, "{}", "X or"),
+            &Restrictions::PlusSymbol => write!(f, "{}", "+"),
+            &Restrictions::MinusSymbol => write!(f, "{}", "-"),
+            &Restrictions::MainPhase => write!(f, "{}", "Main Phase"),
+            &Restrictions::MinusXX => write!(f, "{}", "-x/-x"),
+            &Restrictions::PlusXX => write!(f, "{}", "+x/+x"),
+            &Restrictions::CommanderControl => write!(f, "{}", "control your commander"),
+            &Restrictions::GainLife => write!(f, "{}", "gain life"),
+            _ => write!(f, "{:?}", self),
+        }
+    }
+}
 #[derive(Debug, Clone, Eq, PartialEq, EnumIter, Serialize, Deserialize)]
 pub enum Zones{
     Battlefield,
@@ -637,6 +738,7 @@ pub struct Card {
     pub zones: Option<Vec<Zones>>,
     pub keywords: Option<Vec<Keywords>>,
     pub oracle_types: Option<Vec<CardType>>,
+    pub restrictions: Option<Vec<Restrictions>>,
 }
 impl Card {
     pub fn new() -> Self {
@@ -654,6 +756,7 @@ impl Card {
             zones: None,
             keywords: None,
             oracle_types: None,
+            restrictions: None,
          }
      }
     pub fn make(card: &String, commander: bool) -> CEResult<Self> {
