@@ -16,6 +16,7 @@ macro_rules! impl_fmt {
         $(impl fmt::Display for $t {
             fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
                 write!(f, "{:?}", self)
+
             }
         })*
     };
@@ -379,10 +380,11 @@ pub enum Stats{
 
 impl_fmt!(for CardType, ArtifactSubtype, SpellSubtype, CreatureSubtype, EnchantmentSubtype, LandSubtype, Stats);
 
-/*************************************** Keywords, Zones, effects and Colours *************************************/
+/*************************************** Keywords, Zones, Restrictions and Colours *************************************/
 
 #[derive(Debug, Clone, Eq, PartialEq, EnumIter, Serialize, Deserialize)]
 pub enum Keys{
+    Phase,
     Top,
     Look,
     Add,
@@ -403,12 +405,9 @@ pub enum Keys{
     Untap,
     Discard,
     Search,
-    Target,
     Player,
     Opponent,
     Token,
-    All,
-    Each,
     Copy,
     Every,
     White,
@@ -589,15 +588,19 @@ pub enum Restrictions {
     Pay,
     Can,
     CanT,
-  //  ETBPayoff,
     Whenever,
     Another,
     May,
     If,
+    Target,
     Each,
     All,
     Cmc,
     ManaValue,
+    OneStr,
+    TwoStr,
+    ThreeStr,
+    Zero,
     One,
     Two,
     Three,
@@ -650,8 +653,12 @@ pub enum Restrictions {
 impl fmt::Display for Restrictions{
    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
+            &Restrictions::OneStr => write!(f, "{}", "One"),
+            &Restrictions::TwoStr => write!(f, "{}", "Two"),
+            &Restrictions::ThreeStr => write!(f, "{}", "Three"),
             &Restrictions::EoT => write!(f, "{}", "end of turn"),
             &Restrictions::CanT => write!(f,"{}", "Can't"),
+            &Restrictions::Zero => write!(f, "{}", "0"),
             &Restrictions::One => write!(f, "{}", "1"),
             &Restrictions::Two => write!(f, "{}", "2"),
             &Restrictions::Three => write!(f, "{}", "3"),
@@ -672,8 +679,8 @@ impl fmt::Display for Restrictions{
             &Restrictions::PlusSymbol => write!(f, "{}", "+"),
             &Restrictions::MinusSymbol => write!(f, "{}", "-"),
             &Restrictions::MainPhase => write!(f, "{}", "Main Phase"),
-            &Restrictions::MinusXX => write!(f, "{}", "-x/-x"),
-            &Restrictions::PlusXX => write!(f, "{}", "+x/+x"),
+            &Restrictions::MinusXX => write!(f, "{}", "-X/-X"),
+            &Restrictions::PlusXX => write!(f, "{}", "+X/+X"),
             &Restrictions::CommanderControl => write!(f, "{}", "control your commander"),
             &Restrictions::GainLife => write!(f, "{}", "gain life"),
             _ => write!(f, "{:?}", self),

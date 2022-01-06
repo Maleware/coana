@@ -1,6 +1,7 @@
 use std::{fs, io};
 use clap::{App, Arg};
 use crate::{types::{Deck, CEResult}, logic::database};
+use crate::statistic::basic;
 
 mod types;
 mod import;
@@ -87,15 +88,36 @@ fn main() {
         match check_deck( offline, verbose, input.to_string()) {
             Ok(t) => {
                 println!("Deck name: {}", t.name);
-                for card in &t.library {
-                    println!("Card: {} CMC: {}", &card.name, &card.mana_cost );
-                    println!("Zones: {:?} , Type: {:?} ,\n  Keys: {:?} Keywords: {:?}\n Cartypes in Oracle: {:?} Restrictions: {:?}\n Backside: {:?}",
-                    card.zones, card.cardtype, card.keys, card.keywords, card.oracle_types, card.restrictions,card.backside);
+                let basics = basic::basic::new(&t);
+                println!("Basic Statistics: ");
+                println!("\nCreatures: {}", basics.cardtype.creatures.len());
+                for item in basics.cardtype.creatures {
+                    println!("{}", item.name);
                 }
-                for commander in &t.commander{
-                    println!("\n Commander: {:?}", commander);
-                }
-
+                println!("\nArtifacts: {}", basics.cardtype.artifacts.len());
+                for item in basics.cardtype.artifacts {
+                    println!("{}", item.name);
+                } 
+                println!("\nEnchantments: {}", basics.cardtype.enchantments.len());
+                for item in basics.cardtype.enchantments {
+                    println!("{}", item.name);
+                } 
+                println!("\nLands: {}", basics.cardtype.lands.len());
+                for item in basics.cardtype.lands {
+                    println!("{}", item.name);
+                } 
+                println!("\nInstants: {}", basics.cardtype.instants.len());
+                for item in basics.cardtype.instants {
+                    println!("{}", item.name);
+                } 
+                println!("\nSorcerys: {}", basics.cardtype.sorcerys.len());
+                for item in basics.cardtype.sorcerys {
+                    println!("{}", item.name);
+                }  
+                println!("\nPlaneswalkers: {}", basics.cardtype.planeswalkers.len());
+                for item in basics.cardtype.planeswalkers {
+                    println!("{}", item.name);
+                }  
                 Deck::save(&t);  
             },
             Err(e) => println!("Error: {}", e),
