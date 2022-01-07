@@ -30,7 +30,7 @@ pub mod basic {
         pub instants: Vec<&'deck Card>,
         pub sorcerys: Vec<&'deck Card>,
     }
-
+    #[derive(Debug)]
     pub struct Mana_dist<'deck> {
         pub manacost: HashMap<Colors, u8>,
         pub manaprod: HashMap<Colors, u8>,
@@ -95,80 +95,76 @@ pub mod basic {
 
         for card in &deck.library {
             for color in Colors::iter() {
-                if card.mana_cost.contains(&color.to_string()) {
+                if card.contains(&color, CardFields::ManaCost){
                     *manacost.entry(color).or_insert(0) += card.mana_cost.matches(&color.to_string()).count() as u8;   
                 }
             }
             for color in Colors::iter() {
                 match &card.keys {
                     Some(keys) => {
-                        // if card.find(&color, CardFields::CardType) {} way better method to check if key in card
-                        for key in keys {
-                            if *key == color.to_key() {
+                        if card.contains(&color, CardFields::Keys) { 
+                            if card.contains(Keys::Tap, CardFields::Keys)
+                            || card.contains(CardType::Enchantment(None), CardFields::CardType){ 
                                 for key in keys {
-                                    if key == &Keys::Tap || card.find(CardType::Enchantment(Vec::new()), CardFields::CardType){ 
-                                        for key in keys {
-                                            if key == &Keys::Add {
-                                               // if !card.find(Colors::OneMana, CardFields::Keys) && !card.find(Colors::AnyColor, CardFields::Keys) {
-                                                    *manaprod.entry(color.clone()).or_insert(0) += card.oracle_text.matches(&color.to_string()).count() as u8;
-                                                
-                                                for cardtype in &card.cardtype {
-                                                    match cardtype{ 
-                                                        &CardType::Creature(_)=> {
-                                                            let mut hit = false;
-                                                            for dork in &dorks{
-                                                            if card.name == *dork.name {
-                                                                    hit = true;
-                                                            }
-                                                            }
-                                                            if !hit {
-                                                                dorks.push(&card)
-                                                            }
-                                                        },
-                                                        &CardType::Artifact(_) => {
-                                                            for key in keys {
-                                                                match key {
-                                                                    Keys::Sacrifice =>(),
-                                                                    _ => {
-                                                                        let mut hit = false;
-                                                                        for ramp in &artifacts{
-                                                                            if card.name == ramp.name {
-                                                                                hit = true;
-                                                                            }
-                                                                        }
-                                                                        if !hit {
-                                                                            artifacts.push(card);
-                                                                        }
-                                                                    },
-                                                                }
-                                                            }
-                                                        },
-                                                        &CardType::Enchantment(_) => {
-                                                            let mut hit = false;
-                                                            for enchantment in &enchantments {
-                                                                if card.name == enchantment.name {
-                                                                    hit = true;
-                                                                }
-                                                            }
-                                                            if !hit {
-                                                                enchantments.push(card);
-                                                            }
-                                                        }
-                                                        _ => (),
+                                    if key == &Keys::Add {
+                                        // if !card.find(Colors::OneMana, CardFields::Keys) && !card.find(Colors::AnyColor, CardFields::Keys) {
+                                            *manaprod.entry(color.clone()).or_insert(0) += card.oracle_text.matches(&color.to_string()).count() as u8;
+                                        
+                                        for cardtype in &card.cardtype {
+                                            match cardtype{ 
+                                                &CardType::Creature(_)=> {
+                                                    let mut hit = false;
+                                                    for dork in &dorks{
+                                                    if card.name == *dork.name {
+                                                            hit = true;
                                                     }
-                                                } 
+                                                    }
+                                                    if !hit && !card.contains(Zones::Graveyard, CardFields::Zones){
+                                                        dorks.push(&card)
+                                                    }
+                                                },
+                                                &CardType::Artifact(_) => {
+                                                    for key in keys {
+                                                        match key {
+                                                            Keys::Sacrifice =>(),
+                                                            _ => {
+                                                                let mut hit = false;
+                                                                for ramp in &artifacts{
+                                                                    if card.name == ramp.name {
+                                                                        hit = true;
+                                                                    }
+                                                                }
+                                                                if !hit && !card.contains(CardType::Land(None), CardFields::CardType) {
+                                                                    artifacts.push(card);
+                                                                }
+                                                            },
+                                                        }
+                                                    }
+                                                },
+                                                &CardType::Enchantment(_) => {
+                                                    let mut hit = false;
+                                                    for enchantment in &enchantments {
+                                                        if card.name == enchantment.name {
+                                                            hit = true;
+                                                        }
+                                                    }
+                                                    if !hit {
+                                                        enchantments.push(card);
+                                                    }
+                                                }
+                                                _ => (),
                                             }
-                                        }
-                                    } 
-                                } 
-                            }
+                                        } 
+                                    }
+                                }
+                            }   
                         }
                     },
                     None => (),
                 }
             }
-        } 
-        return Mana_dist{ manacost, manaprod,dorks, artifacts, enchantments };        
+        }  
+        return Mana_dist{ manacost, manaprod, dorks, artifacts, enchantments };        
 
     }
     pub fn effect(deck: &Deck) {} 

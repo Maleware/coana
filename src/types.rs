@@ -50,12 +50,12 @@ pub type CEResult<T> = Result<T, CEerror>;
 
 #[derive(Debug, Clone,Eq, PartialEq, EnumIter, Serialize, Deserialize)]
 pub enum CardType{
-    Instant(Vec<Option<SpellSubtype>>),
-    Sorcery(Vec<Option<SpellSubtype>>),
-    Artifact(Vec<Option<ArtifactSubtype>>),
-    Creature(Vec<Option<CreatureSubtype>>),
-    Enchantment(Vec<Option<EnchantmentSubtype>>),
-    Land(Vec<Option<LandSubtype>>),
+    Instant(Option<Vec<SpellSubtype>>),
+    Sorcery(Option<Vec<SpellSubtype>>),
+    Artifact(Option<Vec<ArtifactSubtype>>),
+    Creature(Option<Vec<CreatureSubtype>>),
+    Enchantment(Option<Vec<EnchantmentSubtype>>),
+    Land(Option<Vec<LandSubtype>>),
     Planeswalker,
     Token,
     Basic,
@@ -791,7 +791,7 @@ pub struct Card {
     pub oracle_types: Option<Vec<CardType>>,
     pub restrictions: Option<Vec<Restrictions>>,
 }
-#[derive(Debug, Clone, Eq, PartialEq, EnumIter, Serialize, Deserialize, Hash)]
+#[derive(Debug, Clone, Eq, PartialEq, EnumIter)]
 pub enum CardFields {
     Cmc,
     ManaCost,
@@ -808,7 +808,7 @@ pub enum CardFields {
     OracleType,
     Restrictions
 }
-// need a function which takes an Enum and returns true/false if in requested field
+
 impl Card {
     pub fn new() -> Self {
         Card {
@@ -853,10 +853,10 @@ impl Card {
             Err(_) => Err(CEerror::FetchValueError),
         }
      }
-    pub fn find<T: Display + Eq + PartialEq> (&self, search: T , field: CardFields) -> bool {
+    pub fn contains<T: Display + Eq + PartialEq> (&self, search: T , field: CardFields) -> bool {
         match field {
             CardFields::Cmc => {
-                if self.cmc == search.to_string().parse::<f32>().expect("Card.find() not a f32") {
+                if self.cmc == search.to_string().parse::<f32>().expect("Card.find() in CardFields::Cmc not a f32") {
                     return true;
                 } else {
                     return false;

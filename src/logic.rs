@@ -303,6 +303,8 @@ pub mod card_build {
     fn oracle_types(input: String) -> Option<Vec<CardType>> {
         let mut result: Vec<CardType> = Vec::new();
         let mut buffer: Vec<CardType> = Vec::new();
+        let mut subtype: Vec<LandSubtype> = Vec::new();
+        let mut landdetect = false;
 
         for types in CardType::iter() {
             if input.to_string().to_lowercase().contains(&types.to_string().to_lowercase()) {
@@ -312,6 +314,24 @@ pub mod card_build {
 
         for types in buffer {
             result.push(get_type(&input, types));
+        }
+
+        for card in &result {
+            if card.to_string() == CardType::Land(None).to_string() {
+                landdetect = true;
+            }
+        }
+
+        if !landdetect {
+            for subtypes in LandSubtype::iter(){
+                if input.to_string().to_lowercase().contains(&subtypes.to_string().to_lowercase()) {
+                    subtype.push(subtypes);
+                } 
+            }
+        }
+
+        if subtype.len() != 0 {
+            result.push(CardType::Land(Some(subtype)));
         }
 
         if result.len() != 0 {
@@ -338,87 +358,81 @@ pub mod card_build {
     fn get_type(input: &String, cardtype: CardType) -> CardType {
         match cardtype {
             CardType::Creature(_) => {
-                let mut buffer: Vec<Option<CreatureSubtype>> = Vec::new();
+                let mut buffer: Vec<CreatureSubtype> = Vec::new();
                 for item in CreatureSubtype::iter() {
                     if input.to_lowercase().contains(&item.to_string().to_lowercase().replace("_", " ")) { 
-                        buffer.push(Some(item));
+                        buffer.push(item);
                     }
                 }
                 if buffer.len() != 0 {
-                    return CardType::Creature(buffer);
+                    return CardType::Creature(Some(buffer));
                 } else {
-                    buffer.push(None);
-                    return CardType::Creature(buffer);
+                    return CardType::Creature(None);
                 }                
             },
             CardType::Artifact(_) => {
-                let mut buffer: Vec<Option<ArtifactSubtype>> = Vec::new();
+                let mut buffer: Vec<ArtifactSubtype> = Vec::new();
                 for item in ArtifactSubtype::iter() {
                     if input.to_lowercase().contains(&item.to_string().to_lowercase().replace("_", " ")) { 
-                        buffer.push(Some(item));
+                        buffer.push(item);
                     }
                 }
                 if buffer.len() != 0 {
-                    return CardType::Artifact(buffer);
+                    return CardType::Artifact(Some(buffer));
                 } else {
-                    buffer.push(None);
-                    return CardType::Artifact(buffer);
+                    return CardType::Artifact(None);
                 } 
             },
             CardType::Enchantment(_) => {
-                let mut buffer: Vec<Option<EnchantmentSubtype>> = Vec::new();
+                let mut buffer: Vec<EnchantmentSubtype> = Vec::new();
                 for item in EnchantmentSubtype::iter() {
                     if input.to_lowercase().contains(&item.to_string().to_lowercase().replace("_", " ")) { 
-                        buffer.push(Some(item));
+                        buffer.push(item);
                     }
                 }
                 if buffer.len() != 0 {
-                    return CardType::Enchantment(buffer);
+                    return CardType::Enchantment(Some(buffer));
                 } else {
-                    buffer.push(None);
-                    return CardType::Enchantment(buffer);
+                    return CardType::Enchantment(None);
                 } 
             },
             CardType::Instant(_) => {
-                let mut buffer: Vec<Option<SpellSubtype>> = Vec::new();
+                let mut buffer: Vec<SpellSubtype> = Vec::new();
                 for item in SpellSubtype::iter() {
                     if input.to_lowercase().contains(&item.to_string().to_lowercase().replace("_", " ")) { 
-                        buffer.push(Some(item));
+                        buffer.push(item);
                     }
                 }
                 if buffer.len() != 0 {
-                    return CardType::Instant(buffer);
+                    return CardType::Instant(Some(buffer));
                 } else {
-                    buffer.push(None);
-                    return CardType::Instant(buffer);
+                    return CardType::Instant(None);
                 } 
             },
             CardType::Land(_) => {
-                let mut buffer: Vec<Option<LandSubtype>> = Vec::new();
+                let mut buffer: Vec<LandSubtype> = Vec::new();
                 for item in LandSubtype::iter() {
                     if input.to_lowercase().contains(&item.to_string().to_lowercase().replace("_", " ")) { 
-                        buffer.push(Some(item));
+                        buffer.push(item);
                     }
                 }
                 if buffer.len() != 0 {
-                    return CardType::Land(buffer);
+                    return CardType::Land(Some(buffer));
                 } else {
-                    buffer.push(None);
-                    return CardType::Land(buffer);
+                    return CardType::Land(None);
                 } 
             },
             CardType::Sorcery(_) => {
-                let mut buffer: Vec<Option<SpellSubtype>> = Vec::new();
+                let mut buffer: Vec<SpellSubtype> = Vec::new();
                 for item in SpellSubtype::iter() {
                     if input.to_lowercase().contains(&item.to_string().to_lowercase().replace("_", " ")) { 
-                        buffer.push(Some(item));
+                        buffer.push(item);
                     }
                 }
                 if buffer.len() != 0 {
-                    return CardType::Sorcery(buffer);
-                } else {
-                    buffer.push(None);
-                    return CardType::Sorcery(buffer);
+                    return CardType::Sorcery(Some(buffer));
+                } else { 
+                    return CardType::Sorcery(None);
                 } 
             
             },
