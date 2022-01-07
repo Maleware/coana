@@ -3,13 +3,13 @@
 
 pub mod basic {
     use crate::types::*;
-    use std::collections::{BTreeMap, HashMap};
+    use std::{collections::{BTreeMap, HashMap}, ops::RangeBounds};
     use crate::types::Colors;
     use strum::IntoEnumIterator;
     pub struct Basic<'deck> {
         pub cardtype: Cardtype<'deck>,
         pub mana_cost: BTreeMap<u8, Vec<&'deck Card>>,
-        pub mana_dist: Mana_dist<'deck>,
+        pub mana_dist: ManaDist<'deck>,
     }
     impl <'deck> Basic<'deck> {
         pub fn new(deck: &Deck) -> Basic {
@@ -31,12 +31,13 @@ pub mod basic {
         pub sorcerys: Vec<&'deck Card>,
     }
     #[derive(Debug)]
-    pub struct Mana_dist<'deck> {
+    pub struct ManaDist<'deck> {
         pub manacost: HashMap<Colors, u8>,
         pub manaprod: HashMap<Colors, u8>,
         pub dorks: Vec<&'deck Card>,
         pub artifacts: Vec<&'deck Card>,
         pub enchantments: Vec<&'deck Card>,
+        pub lands: Vec<&'deck Card>,
     }
     pub fn cardtype<'deck> (deck: &'deck Deck) -> Cardtype<'deck> {
         let mut creatures = Vec::new();
@@ -85,13 +86,14 @@ pub mod basic {
 
         mana_cost 
     }
-    pub fn mana_distribution(deck: &Deck) -> Mana_dist{
+    pub fn mana_distribution(deck: &Deck) -> ManaDist{
         
         let mut manacost: HashMap<Colors, u8> = HashMap::new();
         let mut manaprod: HashMap<Colors, u8> = HashMap::new();
         let mut dorks: Vec<&Card> = Vec::new();
         let mut artifacts: Vec<&Card> = Vec::new();
         let mut enchantments: Vec<&Card> = Vec::new();
+        let mut lands: Vec<&Card> = Vec::new();
 
         for card in &deck.library {
             for color in Colors::iter() {
@@ -124,22 +126,17 @@ pub mod basic {
                                                     }
                                                 },
                                                 &CardType::Artifact(_) => {
-                                                    for key in keys {
-                                                        match key {
-                                                            Keys::Sacrifice =>(),
-                                                            _ => {
-                                                                let mut hit = false;
-                                                                for ramp in &artifacts{
-                                                                    if card.name == ramp.name {
-                                                                        hit = true;
-                                                                    }
-                                                                }
-                                                                if !hit && !card.contains(CardType::Land(None), CardFields::CardType) {
-                                                                    artifacts.push(card);
-                                                                }
-                                                            },
+                                                    if !card.contains(Keys::Sacrifice, CardFields::Keys) { 
+                                                        let mut hit = false;
+                                                        for ramp in &artifacts{
+                                                            if card.name == ramp.name {
+                                                                hit = true;
+                                                            }
                                                         }
-                                                    }
+                                                        if !hit && !card.contains(CardType::Land(None), CardFields::CardType) {
+                                                            artifacts.push(card);
+                                                        }
+                                                    } 
                                                 },
                                                 &CardType::Enchantment(_) => {
                                                     let mut hit = false;
@@ -163,8 +160,15 @@ pub mod basic {
                     None => (),
                 }
             }
-        }  
-        return Mana_dist{ manacost, manaprod, dorks, artifacts, enchantments };        
+            if card.contains(Keys::Search, CardFields::Keys) 
+            && card.contains(CardType::Land(None), CardFields::OracleType)
+            && card.contains(Zones::Library, CardFields::Zones) && card.contains(Zones::Battlefield, CardFields::Zones)
+            && !card.contains(CardType::Land(None), CardFields::CardType)
+            && !card.contains(CardType::Instant(None), CardFields::CardType) {
+                lands.push(card);
+            }
+        }
+        return ManaDist{ manacost, manaprod, dorks, artifacts, enchantments, lands };        
 
     }
     pub fn effect(deck: &Deck) {} 
