@@ -9,7 +9,7 @@ pub mod basic {
     pub struct Basic<'deck> {
         pub cardtype: Cardtype<'deck>,
         pub mana_cost: BTreeMap<u8, Vec<&'deck Card>>,
-        pub mana_dist: Mana_dist,
+        pub mana_dist: Mana_dist<'deck>,
     }
     impl <'deck> Basic<'deck> {
         pub fn new(deck: &Deck) -> Basic {
@@ -31,9 +31,12 @@ pub mod basic {
         pub sorcerys: Vec<&'deck Card>,
     }
 
-    pub struct Mana_dist {
+    pub struct Mana_dist<'deck> {
         pub manacost: HashMap<Colors, u8>,
         pub manaprod: HashMap<Colors, u8>,
+        pub dorks: Vec<&'deck Card>,
+        pub artifacts: Vec<&'deck Card>,
+        pub enchantments: Vec<&'deck Card>,
     }
     pub fn cardtype<'deck> (deck: &'deck Deck) -> Cardtype<'deck> {
         let mut creatures = Vec::new();
@@ -99,13 +102,16 @@ pub mod basic {
             for color in Colors::iter() {
                 match &card.keys {
                     Some(keys) => {
+                        // if card.find(&color, CardFields::CardType) {} way better method to check if key in card
                         for key in keys {
                             if *key == color.to_key() {
                                 for key in keys {
-                                    if key == &Keys::Tap || card.find(CardType::Enchantment(Vec::new()), CardFields::CardType){ // Creatures and Artifacts need to be tapped to add mana. Enchantments not
+                                    if key == &Keys::Tap || card.find(CardType::Enchantment(Vec::new()), CardFields::CardType){ 
                                         for key in keys {
                                             if key == &Keys::Add {
-                                                *manaprod.entry(color.clone()).or_insert(0) += card.oracle_text.matches(&color.to_string()).count() as u8;
+                                               // if !card.find(Colors::OneMana, CardFields::Keys) && !card.find(Colors::AnyColor, CardFields::Keys) {
+                                                    *manaprod.entry(color.clone()).or_insert(0) += card.oracle_text.matches(&color.to_string()).count() as u8;
+                                                
                                                 for cardtype in &card.cardtype {
                                                     match cardtype{ 
                                                         &CardType::Creature(_)=> {
@@ -161,9 +167,8 @@ pub mod basic {
                     None => (),
                 }
             }
-        }
-        println!("Dorks: {:?}, Artifacts: {:?}, Enchantments: {:?}", dorks.len(), artifacts.len(), enchantments.len());
-        return Mana_dist{ manacost, manaprod };        
+        } 
+        return Mana_dist{ manacost, manaprod,dorks, artifacts, enchantments };        
 
     }
     pub fn effect(deck: &Deck) {} 

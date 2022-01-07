@@ -432,6 +432,8 @@ pub enum Keys{
     AnyColor,
     EachColor,
     ETB,
+    OneMana,
+    AnyMana,
 }
 impl fmt::Display for Keys {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -446,6 +448,8 @@ impl fmt::Display for Keys {
             &Keys::AnyColor => write!(f, "{}", "any color"),
             &Keys::EachColor => write!(f, "{}", "each color"),
             &Keys::ETB => write!(f, "{}", "enters the battlefield"),
+            &Keys::AnyMana => write!(f, "{}", "any one color"),
+            &Keys::OneMana => write!(f, "{}", "one mana"),
             _ => write!(f, "{:?}", self),
         }
     }
@@ -723,6 +727,8 @@ pub enum Colors {
     Colourless,
     AnyColor,
     EachColor,
+    AnyMana,
+    OneMana,
 }
 impl_fmt!(for Zones, Keywords);
 impl Colors {
@@ -736,6 +742,8 @@ impl Colors {
             Colors::Colourless => Keys::Colourless,
             Colors::AnyColor => Keys::AnyColor,
             Colors::EachColor => Keys::EachColor,
+            Colors::AnyMana => Keys::AnyMana,
+            Colors::OneMana => Keys::OneMana
         }
     }
 }
@@ -754,6 +762,8 @@ impl fmt::Display for Colors {
                 Colors::Colourless => "{C}",
                 Colors::AnyColor => "any color",
                 Colors::EachColor => "each color",
+                Colors::AnyMana => "any one color",
+                Colors::OneMana => "one mana"
             }
         )
     }
@@ -868,7 +878,7 @@ impl Card {
             ),
             CardFields::CardType => {
                 for types in &self.cardtype {
-                    if types.to_string().replace("([])", "") == search.to_string() {
+                    if types.to_string() == search.to_string().replace("([])", "") {
                         return true;
                     } 
                 }
