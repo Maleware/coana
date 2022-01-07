@@ -397,6 +397,10 @@ impl_fmt!(for  ArtifactSubtype, SpellSubtype, CreatureSubtype, EnchantmentSubtyp
 
 #[derive(Debug, Clone, Eq, PartialEq, EnumIter, Serialize, Deserialize)]
 pub enum Keys{
+    Create,
+    Spell,
+    Turns,
+    Additional,
     Phase,
     Top,
     Look,
@@ -422,7 +426,6 @@ pub enum Keys{
     Opponent,
     Token,
     Copy,
-    Every,
     White,
     Blue,
     Black,
@@ -606,6 +609,7 @@ pub enum Keywords{
 }
 #[derive(Debug, Clone, Eq, PartialEq, EnumIter, Serialize, Deserialize)]
 pub enum Restrictions {
+    Every,
     Pay,
     Can,
     CanT,
@@ -669,7 +673,8 @@ pub enum Restrictions {
     Toughness,
     Less,
     EoT,
-    Die, 
+    Die,
+    After, 
 }
 impl fmt::Display for Restrictions{
    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -700,6 +705,7 @@ impl fmt::Display for Restrictions{
             &Restrictions::PlusSymbol => write!(f, "{}", "+"),
             &Restrictions::MinusSymbol => write!(f, "{}", "-"),
             &Restrictions::MainPhase => write!(f, "{}", "Main Phase"),
+            &Restrictions::Drawstep => write!(f, "{}", "Draw Step"),
             &Restrictions::MinusXX => write!(f, "{}", "-X/-X"),
             &Restrictions::PlusXX => write!(f, "{}", "+X/+X"),
             &Restrictions::CommanderControl => write!(f, "{}", "control your commander"),
@@ -870,7 +876,7 @@ impl Card {
                 }
             },
             CardFields::Name => (
-                if self.name.contains(&search.to_string()) {
+                if self.name.contains(&search.to_string().replace("\"", "")) {
                     return true;
                 } else {
                     return false;
@@ -878,7 +884,7 @@ impl Card {
             ),
             CardFields::CardType => {
                 for types in &self.cardtype {
-                    if types.to_string() == search.to_string().replace("([])", "") {
+                    if types.to_string() == search.to_string() {
                         return true;
                     } 
                 }
@@ -958,7 +964,7 @@ impl Card {
                 match &self.oracle_types {
                     Some(cardtype) => {
                         for types in cardtype {
-                            if types.to_string().replace("([])", "") == search.to_string() {
+                            if types.to_string() == search.to_string() {
                                 return true;
                             }
                         }
