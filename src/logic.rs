@@ -205,7 +205,7 @@ pub mod card_build {
         let mut result: Vec<CardType> = Vec::new();
 
         for types in CardType::iter() { 
-            if input.contains(&types.to_string().replace("([])", "")) {
+            if input.contains(&types.to_string()) {
                 cardtype.push(types);
             }
         }
@@ -246,10 +246,10 @@ pub mod card_build {
         }
 
     }
-    fn backside(input: Option<&serde_json::Value>) -> Box<Option<Card>> {
+    fn backside(input: Option<&serde_json::Value>) -> Option<Box<Card>> {
         match input {
-            Some(t) => {return Box::new(Some(build(t, false , None))); },
-            None =>{return Box::new(None)},
+            Some(t) => {return Some(Box::new(build(t, false , None))); },
+            None => None,
         }
     }
     fn oracle_text(input: String) -> String { // not neccessary, but maybe need to build something here
@@ -305,7 +305,7 @@ pub mod card_build {
         let mut buffer: Vec<CardType> = Vec::new();
 
         for types in CardType::iter() {
-            if input.to_string().to_lowercase().contains(&types.to_string().replace("([])", "").to_lowercase()) {
+            if input.to_string().to_lowercase().contains(&types.to_string().to_lowercase()) {
                 buffer.push(types);
             }
         }

@@ -1,7 +1,7 @@
 #![allow(non_camel_case_types)]
 
 
-use std::{fmt::{self, Debug}, error, fs::*};
+use std::{fmt::{self, Debug, Display}, error, fs::*};
 use strum_macros::{EnumIter};
 use serde::{Serialize, Deserialize};
 
@@ -61,6 +61,19 @@ pub enum CardType{
     Basic,
     InvalidCardType, 
     Card,
+}
+impl fmt::Display for CardType {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match &self {
+            &CardType::Creature(_t) => write!(f, "{}","Creature"),
+            &CardType::Instant(_t) => write!(f, "{}","Instant"),
+            &CardType::Sorcery(_t) => write!(f, "{}","Sorcery"),
+            &CardType::Artifact(_t) => write!(f, "{}","Artifact"),
+            &CardType::Enchantment(_t) => write!(f, "{}","Enchantment"),
+            &CardType::Land(_t) => write!(f, "{}","Land"),
+            _ => write!(f, "{:?}", self),
+        }
+    }
 }
 #[derive(Debug, Clone,Eq, PartialEq, EnumIter, Serialize, Deserialize)]
 pub enum ArtifactSubtype{
@@ -378,7 +391,7 @@ pub enum Stats{
     Loyality(u8),
 }
 
-impl_fmt!(for CardType, ArtifactSubtype, SpellSubtype, CreatureSubtype, EnchantmentSubtype, LandSubtype, Stats);
+impl_fmt!(for  ArtifactSubtype, SpellSubtype, CreatureSubtype, EnchantmentSubtype, LandSubtype, Stats);
 
 /*************************************** Keywords, Zones, Restrictions and Colours *************************************/
 
@@ -417,6 +430,7 @@ pub enum Keys{
     Green,
     Colourless,
     AnyColor,
+    EachColor,
     ETB,
 }
 impl fmt::Display for Keys {
@@ -430,6 +444,7 @@ impl fmt::Display for Keys {
             &Keys::Red => write!(f, "{}","{R}"),
             &Keys::Colourless => write!(f, "{}","{C}"),
             &Keys::AnyColor => write!(f, "{}", "any color"),
+            &Keys::EachColor => write!(f, "{}", "each color"),
             &Keys::ETB => write!(f, "{}", "enters the battlefield"),
             _ => write!(f, "{:?}", self),
         }
@@ -707,6 +722,7 @@ pub enum Colors {
     Green,
     Colourless,
     AnyColor,
+    EachColor,
 }
 impl_fmt!(for Zones, Keywords);
 impl Colors {
@@ -719,6 +735,7 @@ impl Colors {
             Colors::Green => Keys::Green,
             Colors::Colourless => Keys::Colourless,
             Colors::AnyColor => Keys::AnyColor,
+            Colors::EachColor => Keys::EachColor,
         }
     }
 }
@@ -735,7 +752,8 @@ impl fmt::Display for Colors {
                 Colors::Green => "{G}",
                 Colors::Red => "{R}",
                 Colors::Colourless => "{C}",
-                Colors::AnyColor => "any color"
+                Colors::AnyColor => "any color",
+                Colors::EachColor => "each color",
             }
         )
     }
@@ -755,7 +773,7 @@ pub struct Card {
     pub legendary: bool,
     pub stats: Option<Vec<Stats>>,
     pub commander: bool,
-    pub backside: Box<Option<Card>>,
+    pub backside: Option<Box<Card>>,
     pub oracle_text: String,
     pub keys: Option<Vec<Keys>>, 
     pub zones: Option<Vec<Zones>>,
@@ -763,6 +781,24 @@ pub struct Card {
     pub oracle_types: Option<Vec<CardType>>,
     pub restrictions: Option<Vec<Restrictions>>,
 }
+#[derive(Debug, Clone, Eq, PartialEq, EnumIter, Serialize, Deserialize, Hash)]
+pub enum CardFields {
+    Cmc,
+    ManaCost,
+    Name,
+    CardType,
+    Legendary,
+    Stats,
+    Commander,
+    Backside,
+    OracleText,
+    Keys,
+    Zones,
+    Keywords,
+    OracleType,
+    Restrictions
+}
+// need a function which takes an Enum and returns true/false if in requested field
 impl Card {
     pub fn new() -> Self {
         Card {
@@ -773,7 +809,7 @@ impl Card {
             legendary: false,
             stats: None,
             commander: false,
-            backside: Box::new(None),
+            backside: None,
             oracle_text: String::from(""),
             keys: None,
             zones: None,
@@ -807,6 +843,138 @@ impl Card {
             Err(_) => Err(CEerror::FetchValueError),
         }
      }
+    pub fn find<T: Display + Eq + PartialEq> (&self, search: T , field: CardFields) -> bool {
+        match field {
+            CardFields::Cmc => {
+                if self.cmc == search.to_string().parse::<f32>().expect("Card.find() not a f32") {
+                    return true;
+                } else {
+                    return false;
+                }
+            },
+            CardFields::ManaCost => { 
+                if self.mana_cost.contains(&search.to_string()) {
+                    return true;
+                } else {
+                    return false;
+                }
+            },
+            CardFields::Name => (
+                if self.name.contains(&search.to_string()) {
+                    return true;
+                } else {
+                    return false;
+                }
+            ),
+            CardFields::CardType => {
+                for types in &self.cardtype {
+                    if types.to_string().replace("([])", "") == search.to_string() {
+                        return true;
+                    } 
+                }
+                return false;
+            },
+            CardFields::Legendary => (return self.legendary),
+    
+            CardFields::Stats=> {
+                match &self.stats{
+                    Some(stats) => {
+                        for stat in stats {
+                            if stat.to_string() == search.to_string() {
+                                return true;
+                            }
+                        }
+                        return false;
+                    },
+                    None => return false,
+                }                
+            },
+            CardFields::Commander=> return self.commander,
+            CardFields::Backside=> (
+                match self.backside {
+                    Some(_) => return true,
+                    None => return false,
+                }
+
+            ),
+            CardFields::OracleText=> {
+                if self.oracle_text.contains(&search.to_string()) {
+                    return true;
+                }
+                return false;
+            },
+            CardFields::Keys=> {
+                match &self.keys {
+                    Some(keys)=> {
+                        for key in keys {
+                            if key.to_string() == search.to_string() {
+                                return true;
+                            }
+                        }
+                        return false;
+                    },
+                    None => return false,
+                }
+                
+            },
+            CardFields::Zones=> {
+                match &self.zones {
+                    Some(zones) => {
+                        for zone in zones {
+                            if zone.to_string() == search.to_string() {
+                                return true;
+                            }
+                        }
+                        return false;
+                    },
+                    None => return false,
+                }
+               
+            },
+            CardFields::Keywords=> {
+                match &self.keywords {
+                    Some(keywords) => {
+                        for keyword in keywords {
+                            if keyword.to_string() == search.to_string() {
+                                return true;
+                            }
+                        }
+                        return false;
+                    },
+                    None => return false,
+                } 
+            },
+            CardFields::OracleType=> {
+                match &self.oracle_types {
+                    Some(cardtype) => {
+                        for types in cardtype {
+                            if types.to_string().replace("([])", "") == search.to_string() {
+                                return true;
+                            }
+                        }
+                        return false;
+                    },
+                    None => return false,
+                }
+                
+            },
+            CardFields::Restrictions=> {
+                match &self.restrictions {
+                    Some(restrictions) => {
+                        for restriction in restrictions {
+                            if restriction.to_string() == search.to_string() {
+                                return true;
+                            }
+                        }
+                        return false;
+                    }, 
+                    None => return false,
+                }
+                
+            },
+         }
+     }
+
 }
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Deck{

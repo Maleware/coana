@@ -86,6 +86,9 @@ pub mod basic {
         
         let mut manacost: HashMap<Colors, u8> = HashMap::new();
         let mut manaprod: HashMap<Colors, u8> = HashMap::new();
+        let mut dorks: Vec<&Card> = Vec::new();
+        let mut artifacts: Vec<&Card> = Vec::new();
+        let mut enchantments: Vec<&Card> = Vec::new();
 
         for card in &deck.library {
             for color in Colors::iter() {
@@ -97,15 +100,60 @@ pub mod basic {
                 match &card.keys {
                     Some(keys) => {
                         for key in keys {
-                            if key == &color.to_key() {
+                            if *key == color.to_key() {
                                 for key in keys {
-                                    if key == &Keys::Tap {
+                                    if key == &Keys::Tap || card.find(CardType::Enchantment(Vec::new()), CardFields::CardType){ // Creatures and Artifacts need to be tapped to add mana. Enchantments not
                                         for key in keys {
                                             if key == &Keys::Add {
                                                 *manaprod.entry(color.clone()).or_insert(0) += card.oracle_text.matches(&color.to_string()).count() as u8;
+                                                for cardtype in &card.cardtype {
+                                                    match cardtype{ 
+                                                        &CardType::Creature(_)=> {
+                                                            let mut hit = false;
+                                                            for dork in &dorks{
+                                                            if card.name == *dork.name {
+                                                                    hit = true;
+                                                            }
+                                                            }
+                                                            if !hit {
+                                                                dorks.push(&card)
+                                                            }
+                                                        },
+                                                        &CardType::Artifact(_) => {
+                                                            for key in keys {
+                                                                match key {
+                                                                    Keys::Sacrifice =>(),
+                                                                    _ => {
+                                                                        let mut hit = false;
+                                                                        for ramp in &artifacts{
+                                                                            if card.name == ramp.name {
+                                                                                hit = true;
+                                                                            }
+                                                                        }
+                                                                        if !hit {
+                                                                            artifacts.push(card);
+                                                                        }
+                                                                    },
+                                                                }
+                                                            }
+                                                        },
+                                                        &CardType::Enchantment(_) => {
+                                                            let mut hit = false;
+                                                            for enchantment in &enchantments {
+                                                                if card.name == enchantment.name {
+                                                                    hit = true;
+                                                                }
+                                                            }
+                                                            if !hit {
+                                                                enchantments.push(card);
+                                                            }
+                                                        }
+                                                        _ => (),
+                                                    }
+                                                } 
                                             }
                                         }
-                                    }
+                                    } 
                                 } 
                             }
                         }
@@ -114,6 +162,7 @@ pub mod basic {
                 }
             }
         }
+        println!("Dorks: {:?}, Artifacts: {:?}, Enchantments: {:?}", dorks.len(), artifacts.len(), enchantments.len());
         return Mana_dist{ manacost, manaprod };        
 
     }
