@@ -397,6 +397,10 @@ impl_fmt!(for  ArtifactSubtype, SpellSubtype, CreatureSubtype, EnchantmentSubtyp
 
 #[derive(Debug, Clone, Eq, PartialEq, EnumIter, Serialize, Deserialize)]
 pub enum Keys{
+    Play,
+    Redirect,
+    Owner,
+    Put,
     Create,
     Spell,
     Turns,
@@ -453,6 +457,7 @@ impl fmt::Display for Keys {
             &Keys::ETB => write!(f, "{}", "enters the battlefield"),
             &Keys::AnyMana => write!(f, "{}", "any one color"),
             &Keys::OneMana => write!(f, "{}", "one mana"),
+            &Keys::Redirect => write!(f, "{}", "choose new target"),
             _ => write!(f, "{:?}", self),
         }
     }
@@ -609,6 +614,11 @@ pub enum Keywords{
 }
 #[derive(Debug, Clone, Eq, PartialEq, EnumIter, Serialize, Deserialize)]
 pub enum Restrictions {
+    Control,
+    Get,
+    You,
+    Own,
+    Instead,
     Every,
     Pay,
     Can,
@@ -845,6 +855,7 @@ impl Card {
 
                 if v["layout"] == "modal_dfc".to_string()
                 || v["layout"] == "transform".to_string()
+                || v["layout"] == "split".to_string()
                 || v["type_line"].to_string().contains("//"){
                     mdfc = Some(&v["card_faces"][1]);
                 }
