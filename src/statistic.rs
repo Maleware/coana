@@ -216,11 +216,43 @@ pub mod basic {
         let mut reanimation: Vec<&Card> = Vec::new();
 
         for card in &deck.library {
+            match &card.backside {
+                Some(backside) => {
+                    if is_draw(&backside){
+                        draw.push(&backside);
+                    }
+                    if is_removal(&backside){ 
+                        removal.push(&backside);
+                    }
+                    if is_counter(&backside){
+                        counter.push(&backside);
+                    }
+                    if  is_bounce(&backside){
+                        bounce.push(&backside);
+                    }
+                    if is_recursion(&backside) {
+                        recursion.push(&backside);
+                    } 
+                    if is_reanimation(&backside) {
+                        reanimation.push(&backside); 
+                    }
+                    if is_boardwipe(&backside){
+                        boardwipe.push(&backside);
+                    }
+                    if is_payoff(&backside) { 
+                        payoff.push(&backside);
+                    }
+                    if is_lord(&backside) { 
+                        lord.push(&backside);
+                    } 
+                },
+                None => (),
+            }
             if is_draw(card){
                 draw.push(card);
             }
             if is_removal(card){ 
-                removal.push(card); 
+                removal.push(card);
             }
             if is_counter(card){
                 counter.push(card);
@@ -232,7 +264,7 @@ pub mod basic {
                 recursion.push(card);
             } 
             if is_reanimation(card) {
-                reanimation.push(card);
+                reanimation.push(card); 
             }
             if is_boardwipe(card){
                 boardwipe.push(card);
@@ -241,7 +273,7 @@ pub mod basic {
                 payoff.push(card);
             }
             if is_lord(card) { 
-                lord.push(card)
+                lord.push(card);
             }
         }
         return Effect{draw, bounce, removal, boardwipe, lord, counter, payoff, recursion, reanimation};
@@ -316,7 +348,9 @@ pub mod basic {
                     && card.contains(Restrictions::You, CardFields::Restrictions) 
                     && card.contains(Restrictions::Control, CardFields::Restrictions) )) 
             && card.contains(Restrictions::Get, CardFields::Restrictions)
-            && card.contains(Restrictions::PlusSymbol, CardFields::Restrictions) {
+            && card.contains(Restrictions::PlusSymbol, CardFields::Restrictions) 
+            && !card.contains(Keywords::Exalted, CardFields::Keywords)
+            && !card.contains(Restrictions::MinusSymbol, CardFields::Restrictions){
                 return true; 
         } else {
             return false;
@@ -370,7 +404,6 @@ pub mod basic {
             return false;
         }
     } 
-
 
 }
 
