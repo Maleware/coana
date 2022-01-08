@@ -5,7 +5,6 @@ pub mod basic {
     use crate::types::*;
     use std::{collections::{BTreeMap, HashMap}};
     use crate::types::Colors;
-    use reqwest::Response;
     use strum::IntoEnumIterator;
 
     pub struct Basic<'deck> {
@@ -395,7 +394,9 @@ pub mod basic {
         }
     } 
     fn is_reanimation(card: &Card) -> bool {
-        if( (card.contains(Keys::Return, CardFields::Keys) && !card.contains(card.name.to_string(), CardFields::OracleText) )||  card.contains(Keys::Put, CardFields::Keys) )
+        if( (card.contains(Keys::Return, CardFields::Keys) 
+            && !(card.contains(card.name.to_string(), CardFields::OracleText) && !card.contains(Keys::Tapped, CardFields::Keys) )) 
+            ||  card.contains(Keys::Put, CardFields::Keys) )
         && card.contains(Zones::Graveyard, CardFields::Zones) 
         && (card.contains(Zones::Battlefield, CardFields::Zones) && !card.contains(Zones::Hand, CardFields::Zones) )
         && !card.contains(Keys::AnyColor, CardFields::Keys){ 
