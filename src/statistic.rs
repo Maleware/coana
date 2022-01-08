@@ -7,6 +7,7 @@ pub mod basic {
     use crate::types::Colors;
     use reqwest::Response;
     use strum::IntoEnumIterator;
+
     pub struct Basic<'deck> {
         pub cardtype: Cardtype<'deck>,
         pub mana_cost: BTreeMap<u8, Vec<&'deck Card>>,
@@ -215,88 +216,100 @@ pub mod basic {
         let mut reanimation: Vec<&Card> = Vec::new();
 
         for card in &deck.library {
-            // Any form of Card draw
-            if ( card.contains(Keys::Draw, CardFields::Keys) 
-            && !card.contains(Restrictions::Drawstep, CardFields::Restrictions ) && !card.contains(Restrictions::After, CardFields::Restrictions)
-            // Impulsive draw: Exile top card of your library 
-            || ( card.contains(Keys::Exile, CardFields::Keys) 
-                && card.contains(Keys::Top, CardFields::Keys) 
-                && card.contains(CardType::Card, CardFields::OracleType) 
-                && card.contains(Zones::Library, CardFields::Zones)) )
-            && !card.contains(Keys::AnyColor, CardFields::Keys)
-            && !card.contains(Keys::Tapped, CardFields::Keys) {
+            if is_draw(card){
                 draw.push(card);
-            // Any form of targeting removal and overload boardwipes
             }
-            if( card.contains(Keys::Destroy, CardFields::Keys) || (card.contains(Keys::Exile, CardFields::Keys) && !card.contains(&*card.name, CardFields::OracleText) && !card.contains(Keys::Return, CardFields::Keys))) 
-            && card.contains(Restrictions::Target, CardFields::Restrictions) 
-            && ( !card.contains(Zones::Hand, CardFields::Zones) || card.contains(Keywords::Evoke, CardFields::Keywords) ){
-                // Overload replaces target with each
-                if card.contains(Keywords::Overload, CardFields::Keywords) {
-                    boardwipe.push(card);
-                } 
-                // Overload boardwipes are removal too || Ugly hack to exlcude Sevinnes Reclamation
-                if !card.contains(Keywords::Flashback, CardFields::Keywords) && !card.contains(Restrictions::Own, CardFields::Restrictions) {
-                    removal.push(card); 
-                }
-            // Any form of counterspell
+            if is_removal(card){ 
+                removal.push(card); 
             }
-            if( (card.contains(Keys::Counter, CardFields::Keys) && !card.contains(Restrictions::CanT, CardFields::Restrictions))
-            && card.contains(Restrictions::Target, CardFields::Restrictions)
-            && card.contains(Keys::Spell, CardFields::Keys) )
-            || card.contains(Keys::Redirect, CardFields::Keys) {
+            if is_counter(card){
                 counter.push(card);
-
-            // Effects Recursion, bounce and reanimation use Key Return but affect different zones
             }
-            if card.contains(Keys::Return, CardFields::Keys) ||  card.contains(Keys::Put, CardFields::Keys){
-                if card.contains(Keys::Owner, CardFields::Keys) && card.contains(Zones::Hand, CardFields::Zones) {
-                    if card.contains(Keywords::Overload, CardFields::Keywords) && card.contains(Keys::Owner, CardFields::Keys){
-                        boardwipe.push(card);
-                    }
-                    if !card.contains(Keys::Put, CardFields::Keys) && !card.contains(Keywords::Dash, CardFields::Keywords) && !card.contains(Zones::Graveyard, CardFields::Zones){
-                        bounce.push(card);
-                    }
-                } 
-                if card.contains(Zones::Graveyard, CardFields::Zones) 
-                && ( card.contains(Zones::Hand, CardFields::Zones) 
-                    || (card.contains(Zones::Library, CardFields::Zones) && card.contains(Keys::Top, CardFields::Keys)))
-                && !card.contains(Keys::Counter, CardFields::Keys){
-                    recursion.push(card);
-                } 
-                if card.contains(Zones::Graveyard, CardFields::Zones) 
-                && (card.contains(Zones::Battlefield, CardFields::Zones) && !card.contains(Zones::Hand, CardFields::Zones) )
-                && !card.contains(Keys::AnyColor, CardFields::Keys){ 
-                    reanimation.push(card);
-                }
-            // Every other boardwipe which does not contain overload
+            if  is_bounce(card){
+                bounce.push(card);
             }
-            if ( card.contains(Restrictions::Each, CardFields::Restrictions) 
-            || card.contains(Restrictions::All, CardFields::Restrictions) 
-            || card.contains(Restrictions::Every, CardFields::Restrictions) ) 
-            && (card.contains(Keys::Destroy, CardFields::Keys)
-                || (card.contains(Keys::Exile, CardFields::Keys) && !card.contains(&*card.name, CardFields::OracleText ) && !card.contains(Keys::Return, CardFields::Keys) ) 
-                || ( card.contains(Keys::Return, CardFields::Keys) && !card.contains(Keys::Exile, CardFields::Keys) )
-                || card.contains(Restrictions::MinusXX, CardFields::Restrictions) ) 
-            && !card.contains(Keywords::Overload, CardFields::Keywords) 
-            && !card.contains(Keywords::Phasing, CardFields::Keywords)
-            && !card.contains(Keywords::Flashback, CardFields::Keywords) 
-            && !card.contains(CardType::Planeswalker, CardFields::CardType)
-            && (!card.contains(Zones::Hand, CardFields::Zones) && !card.contains(Keys::Opponent, CardFields::Keys)){
+            if is_recursion(card) {
+                recursion.push(card);
+            } 
+            if is_reanimation(card) {
+                reanimation.push(card);
+            }
+            if is_boardwipe(card){
                 boardwipe.push(card);
             }
-            if card.contains(Restrictions::Whenever, CardFields::Restrictions)
-            && (card.contains(Keys::ETB, CardFields::Keys) 
-                || (card.contains(Keys::Cast, CardFields::Keys) && card.contains(Restrictions::You, CardFields::Restrictions))
-                || (card.contains(Keys::Copy, CardFields::Keys) && card.contains(Restrictions::You, CardFields::Restrictions))
-                || (card.contains(Keys::Play, CardFields::Keys) && card.contains(Restrictions::You, CardFields::Restrictions))
-                || (card.contains(Keys::Damage, CardFields::Keys) && !card.contains(Restrictions::You, CardFields::Restrictions)) 
-                || card.contains(Restrictions::Die, CardFields::Restrictions) 
-                || (card.contains(Restrictions::GainLife, CardFields::Restrictions)&& card.contains(Restrictions::You, CardFields::Restrictions))
-                || (card.contains(Keys::Draw, CardFields::Keys) && card.contains(Restrictions::You, CardFields::Restrictions) )) {
-                    payoff.push(card);
+            if is_payoff(card) { 
+                payoff.push(card);
             }
-            if ( card.contains(Restrictions::Each, CardFields::Restrictions) 
+            if is_lord(card) { 
+                lord.push(card)
+            }
+        }
+        return Effect{draw, bounce, removal, boardwipe, lord, counter, payoff, recursion, reanimation};
+    }
+    fn is_draw(card: &Card) -> bool {
+        if ( card.contains(Keys::Draw, CardFields::Keys) 
+        && !card.contains(Restrictions::Drawstep, CardFields::Restrictions ) && !card.contains(Restrictions::After, CardFields::Restrictions)
+        // Impulsive draw: Exile top card of your library 
+        || ( card.contains(Keys::Exile, CardFields::Keys) 
+            && card.contains(Keys::Top, CardFields::Keys) 
+            && card.contains(CardType::Card, CardFields::OracleType) 
+            && card.contains(Zones::Library, CardFields::Zones)) )
+        && !card.contains(Keys::AnyColor, CardFields::Keys)
+        && !card.contains(Keys::Tapped, CardFields::Keys) {
+            return true;
+        } else {
+            return false;
+        }
+    } 
+    fn is_bounce(card: &Card) -> bool {
+        if (card.contains(Keys::Return, CardFields::Keys) ||  card.contains(Keys::Put, CardFields::Keys) )
+        && (card.contains(Keys::Owner, CardFields::Keys) && card.contains(Zones::Hand, CardFields::Zones) )
+        && (!card.contains(Keys::Put, CardFields::Keys) && !card.contains(Keywords::Dash, CardFields::Keywords) && !card.contains(Zones::Graveyard, CardFields::Zones)){
+            return true;
+        } else {
+            return false;
+        }
+    } 
+    fn is_removal(card: &Card) -> bool {
+        if( card.contains(Keys::Destroy, CardFields::Keys) || (card.contains(Keys::Exile, CardFields::Keys) && !card.contains(&*card.name, CardFields::OracleText) && !card.contains(Keys::Return, CardFields::Keys))) 
+        && card.contains(Restrictions::Target, CardFields::Restrictions) 
+        && ( !card.contains(Zones::Hand, CardFields::Zones) || card.contains(Keywords::Evoke, CardFields::Keywords) )
+            // Overload boardwipes are removal too || Ugly hack to exlcude Sevinnes Reclamation
+        &&!card.contains(Keywords::Flashback, CardFields::Keywords) && !card.contains(Restrictions::Own, CardFields::Restrictions) {
+            return true; 
+        } else {
+            return false;
+        } 
+    } 
+    fn is_boardwipe(card: &Card) -> bool {
+        if( card.contains(Keys::Destroy, CardFields::Keys) || (card.contains(Keys::Exile, CardFields::Keys) && !card.contains(&*card.name, CardFields::OracleText) && !card.contains(Keys::Return, CardFields::Keys))) 
+        && card.contains(Restrictions::Target, CardFields::Restrictions) 
+        && ( !card.contains(Zones::Hand, CardFields::Zones) || card.contains(Keywords::Evoke, CardFields::Keywords) )
+        && card.contains(Keywords::Overload, CardFields::Keywords) {
+                return true;
+        } else if ( card.contains(Restrictions::Each, CardFields::Restrictions) 
+        || card.contains(Restrictions::All, CardFields::Restrictions) 
+        || card.contains(Restrictions::Every, CardFields::Restrictions) ) 
+        && (card.contains(Keys::Destroy, CardFields::Keys)
+            || (card.contains(Keys::Exile, CardFields::Keys) && !card.contains(&*card.name, CardFields::OracleText ) && !card.contains(Keys::Return, CardFields::Keys) ) 
+            || ( card.contains(Keys::Return, CardFields::Keys) && !card.contains(Keys::Exile, CardFields::Keys) )
+            || card.contains(Restrictions::MinusXX, CardFields::Restrictions) ) 
+        && !card.contains(Keywords::Overload, CardFields::Keywords) 
+        && !card.contains(Keywords::Phasing, CardFields::Keywords)
+        && !card.contains(Keywords::Flashback, CardFields::Keywords) 
+        && !card.contains(CardType::Planeswalker, CardFields::CardType)
+        && (!card.contains(Zones::Hand, CardFields::Zones) && !card.contains(Keys::Opponent, CardFields::Keys)){
+            return true;
+        } else if (card.contains(Keys::Return, CardFields::Keys) ||  card.contains(Keys::Put, CardFields::Keys))
+        && (card.contains(Keys::Owner, CardFields::Keys) && card.contains(Zones::Hand, CardFields::Zones) )
+        && card.contains(Keywords::Overload, CardFields::Keywords) && card.contains(Keys::Owner, CardFields::Keys){ 
+            return true;
+        } else {
+            return false
+        }
+    } 
+    fn is_lord(card: &Card) -> bool {
+        if ( card.contains(Restrictions::Each, CardFields::Restrictions) 
                 || card.contains(Restrictions::All, CardFields::Restrictions) 
                 || card.contains(Restrictions::Every, CardFields::Restrictions)
                 || (card.contains(CardType::Creature(None), CardFields::OracleType) 
@@ -304,12 +317,61 @@ pub mod basic {
                     && card.contains(Restrictions::Control, CardFields::Restrictions) )) 
             && card.contains(Restrictions::Get, CardFields::Restrictions)
             && card.contains(Restrictions::PlusSymbol, CardFields::Restrictions) {
-                lord.push(card)
-            }
+                return true; 
+        } else {
+            return false;
         }
-
-        return Effect{draw, bounce, removal, boardwipe, lord, counter, payoff, recursion, reanimation};
     } 
+    fn is_counter(card: &Card) -> bool {
+        if( (card.contains(Keys::Counter, CardFields::Keys) && !card.contains(Restrictions::CanT, CardFields::Restrictions))
+        && card.contains(Restrictions::Target, CardFields::Restrictions)
+        && card.contains(Keys::Spell, CardFields::Keys))
+        || (card.contains(Keys::Redirect, CardFields::Keys) && !card.contains(CardType::Artifact(None), CardFields::CardType)){
+            return true;
+        } else {
+            return false;
+        }
+ 
+    } 
+    fn is_payoff(card: &Card) -> bool {
+        if ( card.contains(Restrictions::Whenever, CardFields::Restrictions) && !card.contains(Keys::Tapped, CardFields::Keys) )
+        && (card.contains(Keys::ETB, CardFields::Keys) 
+            || (card.contains(Keys::Cast, CardFields::Keys) && card.contains(Restrictions::You, CardFields::Restrictions))
+            || (card.contains(Keys::Copy, CardFields::Keys) && card.contains(Restrictions::You, CardFields::Restrictions))
+            || (card.contains(Keys::Play, CardFields::Keys) && card.contains(Restrictions::You, CardFields::Restrictions))
+            || (card.contains(Keys::Damage, CardFields::Keys) && !card.contains(Restrictions::You, CardFields::Restrictions)) 
+            || card.contains(Restrictions::Die, CardFields::Restrictions)
+            || card.contains(Keys::Discard, CardFields::Keys) 
+            || (card.contains(Restrictions::GainLife, CardFields::Restrictions)&& card.contains(Restrictions::You, CardFields::Restrictions))
+            || (card.contains(Keys::Draw, CardFields::Keys) && card.contains(Restrictions::You, CardFields::Restrictions) )) {
+                return true;
+        } else {
+            return false;
+        }        
+    } 
+    fn is_recursion(card: &Card) -> bool {
+        if (card.contains(Keys::Return, CardFields::Keys) ||  card.contains(Keys::Put, CardFields::Keys))
+        && card.contains(Zones::Graveyard, CardFields::Zones) 
+        && ( card.contains(Zones::Hand, CardFields::Zones) 
+            || (card.contains(Zones::Library, CardFields::Zones) && card.contains(Keys::Top, CardFields::Keys)))
+        && !card.contains(Keys::Counter, CardFields::Keys){
+            return true;
+        } else {
+            return false;
+        }
+    } 
+    fn is_reanimation(card: &Card) -> bool {
+        if( (card.contains(Keys::Return, CardFields::Keys) && !card.contains(card.name.to_string(), CardFields::OracleText) )||  card.contains(Keys::Put, CardFields::Keys) )
+        && card.contains(Zones::Graveyard, CardFields::Zones) 
+        && (card.contains(Zones::Battlefield, CardFields::Zones) && !card.contains(Zones::Hand, CardFields::Zones) )
+        && !card.contains(Keys::AnyColor, CardFields::Keys){ 
+            return true;
+        } else {
+            return false;
+        }
+    } 
+
+
 }
 
 pub mod r#abstract {}

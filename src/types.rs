@@ -614,6 +614,7 @@ pub enum Keywords{
 }
 #[derive(Debug, Clone, Eq, PartialEq, EnumIter, Serialize, Deserialize)]
 pub enum Restrictions {
+    Exchange,
     Control,
     Get,
     You,
