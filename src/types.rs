@@ -397,6 +397,7 @@ impl_fmt!(for  ArtifactSubtype, SpellSubtype, CreatureSubtype, EnchantmentSubtyp
 
 #[derive(Debug, Clone, Eq, PartialEq, EnumIter, Serialize, Deserialize)]
 pub enum Keys{
+    Cost, 
     Play,
     Redirect,
     Owner,
@@ -436,8 +437,8 @@ pub enum Keys{
     Red,
     Green,
     Colourless,
-    AnyColor,
-    EachColor,
+//    AnyColor,
+//    EachColor,
     ETB,
     OneMana,
     AnyMana,
@@ -452,11 +453,11 @@ impl fmt::Display for Keys {
             &Keys::Green => write!(f, "{}","{G}"),
             &Keys::Red => write!(f, "{}","{R}"),
             &Keys::Colourless => write!(f, "{}","{C}"),
-            &Keys::AnyColor => write!(f, "{}", "any color"),
-            &Keys::EachColor => write!(f, "{}", "each color"),
+//            &Keys::AnyColor => write!(f, "{}", "any color"),
+//            &Keys::EachColor => write!(f, "{}", "each color"),
             &Keys::ETB => write!(f, "{}", "enters the battlefield"),
             &Keys::AnyMana => write!(f, "{}", "any one color"),
-            &Keys::OneMana => write!(f, "{}", "one mana"),
+            &Keys::OneMana => write!(f, "{}", "one mana of any"),
             &Keys::Redirect => write!(f, "{}", "choose new target"),
             _ => write!(f, "{:?}", self),
         }
@@ -742,8 +743,8 @@ pub enum Colors {
     Red,
     Green,
     Colourless,
-    AnyColor,
-    EachColor,
+//    AnyColor,
+//    EachColor,
     AnyMana,
     OneMana,
 }
@@ -757,8 +758,8 @@ impl Colors {
             Colors::Red => Keys::Red,
             Colors::Green => Keys::Green,
             Colors::Colourless => Keys::Colourless,
-            Colors::AnyColor => Keys::AnyColor,
-            Colors::EachColor => Keys::EachColor,
+//            Colors::AnyColor => Keys::AnyColor,
+//            Colors::EachColor => Keys::EachColor,
             Colors::AnyMana => Keys::AnyMana,
             Colors::OneMana => Keys::OneMana
         }
@@ -777,10 +778,10 @@ impl fmt::Display for Colors {
                 Colors::Green => "{G}",
                 Colors::Red => "{R}",
                 Colors::Colourless => "{C}",
-                Colors::AnyColor => "any color",
-                Colors::EachColor => "each color",
+//               Colors::AnyColor => "any color",
+//               Colors::EachColor => "each color",
                 Colors::AnyMana => "any one color",
-                Colors::OneMana => "one mana"
+                Colors::OneMana => "one mana of any",
             }
         )
     }

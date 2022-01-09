@@ -6,7 +6,8 @@ pub mod basic {
     use std::{collections::{BTreeMap, HashMap}};
     use crate::types::Colors;
     use strum::IntoEnumIterator;
-
+    
+    #[derive(Debug)]
     pub struct Basic<'deck> {
         pub cardtype: Cardtype<'deck>,
         pub mana_cost: BTreeMap<u8, Vec<&'deck Card>>,
@@ -52,9 +53,11 @@ pub mod basic {
         pub counter: Vec<&'deck Card>,
         pub payoff: Vec<&'deck Card>,
         pub recursion: Vec<&'deck Card>,
-        pub reanimation: Vec<&'deck Card>
+        pub reanimation: Vec<&'deck Card>,
+        pub stax: Vec<&'deck Card>,
         
     }
+    
     pub fn cardtype<'deck> (deck: &'deck Deck) -> Cardtype<'deck> {
         let mut creatures = Vec::new();
         let mut enchantments = Vec::new();
@@ -118,68 +121,63 @@ pub mod basic {
                     *manacost.entry(color).or_insert(0) += card.mana_cost.matches(&color.to_string()).count() as u8;   
                 }
             }
-            for color in Colors::iter() {
-                match color {
-                    Colors::OneMana => (),
-                    _ => {
-                        match &card.keys {
-                            Some(keys) => {
-                                if card.contains(&color, CardFields::Keys) { 
-                                    if card.contains(Keys::Tap, CardFields::Keys)
-                                    || card.contains(CardType::Enchantment(None), CardFields::CardType){ 
-                                        for key in keys {
-                                            if key == &Keys::Add {
-                                                // Mana productions to the basis of colors
-                                                    *manaprod.entry(color.clone()).or_insert(0) += card.oracle_text.matches(&color.to_string()).count() as u8;
-                                                
-                                                for cardtype in &card.cardtype {
-                                                    match cardtype{ 
-                                                        &CardType::Creature(_)=> {
-                                                            let mut hit = false;
-                                                            for dork in &dorks{
-                                                            if card.name == *dork.name {
-                                                                    hit = true;
-                                                            }
-                                                            }
-                                                            if !hit && !card.contains(Zones::Graveyard, CardFields::Zones){
-                                                                dorks.push(&card)
-                                                            }
-                                                        },
-                                                        &CardType::Artifact(_) => {
-                                                            if !card.contains(Keys::Sacrifice, CardFields::Keys) { 
-                                                                let mut hit = false;
-                                                                for ramp in &artifacts{
-                                                                    if card.name == ramp.name {
-                                                                        hit = true;
-                                                                    }
-                                                                }
-                                                                if !hit && !card.contains(CardType::Land(None), CardFields::CardType) {
-                                                                    artifacts.push(card);
-                                                                }
-                                                            } 
-                                                        },
-                                                        &CardType::Enchantment(_) => {
-                                                            let mut hit = false;
-                                                            for enchantment in &enchantments {
-                                                                if card.name == enchantment.name {
-                                                                    hit = true;
-                                                                }
-                                                            }
-                                                            if !hit {
-                                                                enchantments.push(card);
+            for color in Colors::iter() { 
+                match &card.keys {
+                    Some(keys) => {
+                        if card.contains(&color, CardFields::Keys) { 
+                            if card.contains(Keys::Tap, CardFields::Keys)
+                            || card.contains(CardType::Enchantment(None), CardFields::CardType){ 
+                                for key in keys {
+                                    if key == &Keys::Add {
+                                        // Mana productions to the basis of colors
+                                                *manaprod.entry(color.clone()).or_insert(0) += card.oracle_text.matches(&color.to_string()).count() as u8;
+                                            
+                                        for cardtype in &card.cardtype {
+                                            match cardtype{ 
+                                                &CardType::Creature(_)=> {
+                                                    let mut hit = false;
+                                                    for dork in &dorks{
+                                                    if card.name == *dork.name {
+                                                            hit = true;
+                                                    }
+                                                    }
+                                                    if !hit && !card.contains(Zones::Graveyard, CardFields::Zones){
+                                                        dorks.push(&card)
+                                                    }
+                                                },
+                                                &CardType::Artifact(_) => {
+                                                    if !card.contains(Keys::Sacrifice, CardFields::Keys){ 
+                                                        let mut hit = false;
+                                                        for ramp in &artifacts{
+                                                            if card.name == ramp.name {
+                                                                hit = true;
                                                             }
                                                         }
-                                                        _ => (),
+                                                        if !hit && !card.contains(CardType::Land(None), CardFields::CardType) {
+                                                            artifacts.push(card);
+                                                        }
+                                                    } 
+                                                },
+                                                &CardType::Enchantment(_) => {
+                                                    let mut hit = false;
+                                                    for enchantment in &enchantments {
+                                                        if card.name == enchantment.name {
+                                                            hit = true;
+                                                        }
                                                     }
-                                                } 
+                                                    if !hit {
+                                                        enchantments.push(card);
+                                                    }
+                                                }
+                                                _ => (),
                                             }
-                                        }
-                                    }   
+                                        } 
+                                    }
                                 }
-                            },
-                            None => (),
+                            }   
                         }
-                    },      
+                    },
+                    None => (),
                 }
             }
             // Landramp including searching your library
@@ -199,6 +197,15 @@ pub mod basic {
             && card.contains(CardType::Land(None), CardFields::OracleType) {
                 dorks.push(card);
             }
+            // Needed to get the mana reduction artifacts and effects
+            if card.contains(Keys::Cost, CardFields::Keys) 
+            && card.contains(Restrictions::Less, CardFields::Restrictions) 
+            && card.contains(Keys::Cast, CardFields::Keys) 
+            && card.contains(Keys::Spell, CardFields::Keys)
+            && !card.contains(Zones::Battlefield, CardFields::Zones)  
+            {
+                artifacts.push(card);
+            }
         }
         return ManaDist{ manacost, manaprod, dorks, artifacts, enchantments, lands };        
 
@@ -213,6 +220,7 @@ pub mod basic {
         let mut payoff: Vec<&Card> = Vec::new();
         let mut recursion: Vec<&Card> = Vec::new();
         let mut reanimation: Vec<&Card> = Vec::new();
+        let mut stax: Vec<&Card> = Vec::new();
 
         for card in &deck.library {
             match &card.backside {
@@ -243,6 +251,9 @@ pub mod basic {
                     }
                     if is_lord(&backside) { 
                         lord.push(&backside);
+                    }
+                    if is_stax(&backside) {
+                        stax.push(&backside);
                     } 
                 },
                 None => (),
@@ -274,8 +285,11 @@ pub mod basic {
             if is_lord(card) { 
                 lord.push(card);
             }
+            if is_stax(card) {
+                stax.push(card);
+            }
         }
-        return Effect{draw, bounce, removal, boardwipe, lord, counter, payoff, recursion, reanimation};
+        return Effect{draw, bounce, removal, boardwipe, lord, counter, payoff, recursion, reanimation, stax};
     }
     fn is_draw(card: &Card) -> bool {
         if ( card.contains(Keys::Draw, CardFields::Keys) 
@@ -284,8 +298,10 @@ pub mod basic {
         || ( card.contains(Keys::Exile, CardFields::Keys) 
             && card.contains(Keys::Top, CardFields::Keys) 
             && card.contains(CardType::Card, CardFields::OracleType) 
-            && card.contains(Zones::Library, CardFields::Zones)) )
-        && !card.contains(Keys::AnyColor, CardFields::Keys)
+            && card.contains(Zones::Library, CardFields::Zones)
+            && !card.contains(Restrictions::Reveal, CardFields::Restrictions)
+            && !card.contains(Restrictions::Until, CardFields::Restrictions)) )
+//        && !card.contains(Keys::AnyColor, CardFields::Keys)
         && !card.contains(Keys::Tapped, CardFields::Keys) {
             return true;
         } else {
@@ -359,7 +375,7 @@ pub mod basic {
         if( (card.contains(Keys::Counter, CardFields::Keys) && !card.contains(Restrictions::CanT, CardFields::Restrictions))
         && card.contains(Restrictions::Target, CardFields::Restrictions)
         && card.contains(Keys::Spell, CardFields::Keys))
-        || (card.contains(Keys::Redirect, CardFields::Keys) && !card.contains(CardType::Artifact(None), CardFields::CardType)){
+        || (card.contains(Keys::Redirect, CardFields::Keys) && !card.contains(CardType::Artifact(None), CardFields::CardType) && !card.contains(Keywords::Storm, CardFields::Keywords)){
             return true;
         } else {
             return false;
@@ -374,18 +390,26 @@ pub mod basic {
             || (card.contains(Keys::Play, CardFields::Keys) && card.contains(Restrictions::You, CardFields::Restrictions))
             || (card.contains(Keys::Damage, CardFields::Keys) && !card.contains(Restrictions::You, CardFields::Restrictions)) 
             || card.contains(Restrictions::Die, CardFields::Restrictions)
-            || card.contains(Keys::Discard, CardFields::Keys) 
-            || (card.contains(Restrictions::GainLife, CardFields::Restrictions)&& card.contains(Restrictions::You, CardFields::Restrictions))
-            || (card.contains(Keys::Draw, CardFields::Keys) && card.contains(Restrictions::You, CardFields::Restrictions) )) {
+            || (card.contains(Keys::Discard, CardFields::Keys) && !card.contains(Restrictions::Drawstep, CardFields::Restrictions) )
+            || (card.contains(Restrictions::GainLife, CardFields::Restrictions) && card.contains(Restrictions::You, CardFields::Restrictions))
+            || ( (card.contains(Keys::Draw, CardFields::Keys) &&!card.contains(Restrictions::Drawstep, CardFields::Restrictions)) && card.contains(Restrictions::You, CardFields::Restrictions) ))
+        || (card.contains(Keys::Sacrifice, CardFields::Keys)   
+            && card.contains(CardType::Creature(None), CardFields::OracleType) 
+            && !card.contains(Keys::Search, CardFields::Keys)
+            && !card.contains(&card.name.to_string(), CardFields::OracleText))
+        || (card.contains(Keys::Sacrifice, CardFields::Keys) 
+            && card.contains(CardType::Artifact(None), CardFields::OracleType)
+            && !card.contains(Keys::Search, CardFields::Keys)
+            && !card.contains(&card.name.to_string(), CardFields::OracleText )){ 
                 return true;
         } else {
             return false;
         }        
     } 
     fn is_recursion(card: &Card) -> bool {
-        if (card.contains(Keys::Return, CardFields::Keys) ||  card.contains(Keys::Put, CardFields::Keys))
-        && card.contains(Zones::Graveyard, CardFields::Zones) 
-        && ( card.contains(Zones::Hand, CardFields::Zones) 
+        if (card.contains(Keys::Return, CardFields::Keys) ||  card.contains(Keys::Put, CardFields::Keys) )
+        && ( card.contains(Zones::Graveyard, CardFields::Zones) && !card.contains(Restrictions::Drawstep, CardFields::Restrictions)) 
+        && ( ( card.contains(Zones::Hand, CardFields::Zones) && !card.contains(Restrictions::Reveal, CardFields::Restrictions)) 
             || (card.contains(Zones::Library, CardFields::Zones) && card.contains(Keys::Top, CardFields::Keys)))
         && !card.contains(Keys::Counter, CardFields::Keys){
             return true;
@@ -399,13 +423,26 @@ pub mod basic {
             ||  card.contains(Keys::Put, CardFields::Keys) )
         && card.contains(Zones::Graveyard, CardFields::Zones) 
         && (card.contains(Zones::Battlefield, CardFields::Zones) && !card.contains(Zones::Hand, CardFields::Zones) )
-        && !card.contains(Keys::AnyColor, CardFields::Keys){ 
+        && !card.contains(Keys::OneMana, CardFields::Keys)
+        { 
             return true;
         } else {
             return false;
         }
     } 
-
+    fn is_stax(card: &Card) -> bool {
+        if ((card.contains(Restrictions::CanT, CardFields::Restrictions) 
+            || card.contains(Keys::Player, CardFields::Restrictions)
+            || card.contains(Keys::Opponent, CardFields::Keys)) 
+            && card.contains(Restrictions::Each, CardFields::Restrictions))
+            || (card.contains(Keys::Cost, CardFields::Keys) 
+                && card.contains(Restrictions::More, CardFields::Restrictions) 
+            )
+            {
+                return true;
+            }
+            return false;
+    }
 }
 
 pub mod r#abstract {}
