@@ -88,7 +88,7 @@ fn main() {
         match check_deck( offline, verbose, input.to_string()) {
             Ok(t) => {
                 println!("Deck name: {}", t.name);
-                let basics = basic::basic::new(&t);
+                let basics = basic::Basic::new(&t);
                 println!("Basic Statistics: ");
                 println!("\nCreatures: {}", basics.cardtype.creatures.len());
                 for item in basics.cardtype.creatures {
@@ -114,10 +114,78 @@ fn main() {
                 for item in basics.cardtype.sorcerys {
                     println!("{}", item.name);
                 }  
-                println!("\nPlaneswalkers: {}", basics.cardtype.planeswalkers.len());
+                println!("\nPlaneswalkers: {} \n", basics.cardtype.planeswalkers.len());
                 for item in basics.cardtype.planeswalkers {
                     println!("{}", item.name);
+                }
+                for (key, card) in basics.mana_cost {
+                    println!("Mana Cost: {} Number:{:?} \n", key, card.len());
+                }
+                for (colour, pips) in basics.mana_dist.manacost {
+                    println!("Colour: {:?}, Pips: {}",colour,pips )
+                }
+                println!("\n");
+                for (colour, pips) in basics.mana_dist.manaprod {
+                    println!("Colour: {:?}, Producing: {}", colour, pips);
+                }
+
+                println!("\nDorks:");
+                for dork in basics.mana_dist.dorks {
+                    println!("{}", dork.name);
+                }
+                println!("\nArtifacts:");
+                for artifact in basics.mana_dist.artifacts {
+                    println!("{}", artifact.name);
+                }
+                println!("\nEnchantment:");
+                for enchantment in basics.mana_dist.enchantments {
+                    println!("{}", enchantment.name);
+                }
+                println!("\nLands:");
+                for land in basics.mana_dist.lands {
+                    println!("{}", land.name);
+                }
+
+                println!("\nDraws:");
+                for draw in basics.effect.draw {
+                    println!("{}", draw.name);
+                }
+                println!("\nBounce:");
+                for bounce in basics.effect.bounce {
+                    println!("{}", bounce.name);
+                }
+                println!("\nRemoval:");
+                for removal in basics.effect.removal {
+                    println!("{}", removal.name);
                 }  
+                println!("\nBoardqipe:");
+                for boardwipe in basics.effect.boardwipe {
+                    println!("{}", boardwipe.name);
+                } 
+                println!("\nLord:");
+                for lord in basics.effect.lord {
+                    println!("{}", lord.name);
+                } 
+                println!("\nCounter:");
+                for counter in basics.effect.counter {
+                    println!("{}", counter.name);
+                } 
+                println!("\nPayoff:");
+                for payoff in basics.effect.payoff {
+                    println!("{}", payoff.name);
+                } 
+                println!("\nRecursion:");
+                for recursion in basics.effect.recursion {
+                    println!("{}", recursion.name);
+                } 
+                println!("\nReanimation:");
+                for rean in basics.effect.reanimation {
+                    println!("{}", rean.name);
+                }
+                println!("\nStax:");
+                for stax in basics.effect.stax {
+                    println!("{}", stax.name);
+                } 
                 Deck::save(&t);  
             },
             Err(e) => println!("Error: {}", e),
