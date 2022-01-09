@@ -292,17 +292,21 @@ pub mod basic {
         return Effect{draw, bounce, removal, boardwipe, lord, counter, payoff, recursion, reanimation, stax};
     }
     fn is_draw(card: &Card) -> bool {
-        if ( card.contains(Keys::Draw, CardFields::Keys) 
-        && !card.contains(Restrictions::Drawstep, CardFields::Restrictions ) && !card.contains(Restrictions::After, CardFields::Restrictions)
+        if (( card.contains(Keys::Draw, CardFields::Keys) 
+        && (!card.contains(Restrictions::Drawstep, CardFields::Restrictions ) && !card.contains(Restrictions::After, CardFields::Restrictions) ) 
+        && (!card.contains(Keys::Exile, CardFields::Keys) && !card.contains(Restrictions::Instead, CardFields::Restrictions))   )
         // Impulsive draw: Exile top card of your library 
         || ( card.contains(Keys::Exile, CardFields::Keys) 
             && card.contains(Keys::Top, CardFields::Keys) 
             && card.contains(CardType::Card, CardFields::OracleType) 
             && card.contains(Zones::Library, CardFields::Zones)
             && !card.contains(Restrictions::Reveal, CardFields::Restrictions)
-            && !card.contains(Restrictions::Until, CardFields::Restrictions)) )
-//        && !card.contains(Keys::AnyColor, CardFields::Keys)
-        && !card.contains(Keys::Tapped, CardFields::Keys) {
+            && !card.contains(Restrictions::Until, CardFields::Restrictions)
+            && !card.contains(Restrictions::Instead, CardFields::Restrictions)) )
+        && !card.contains(Keys::OneMana, CardFields::Keys)
+        && !card.contains(Keys::Tapped, CardFields::Keys)
+        && !card.contains(Keywords::Imprint, CardFields::Keywords) 
+        && !card.contains(Keys::Search, CardFields::Keys){
             return true;
         } else {
             return false;
@@ -424,6 +428,7 @@ pub mod basic {
         && card.contains(Zones::Graveyard, CardFields::Zones) 
         && (card.contains(Zones::Battlefield, CardFields::Zones) && !card.contains(Zones::Hand, CardFields::Zones) )
         && !card.contains(Keys::OneMana, CardFields::Keys)
+        && !card.contains(Restrictions::Instead, CardFields::Restrictions)
         { 
             return true;
         } else {
@@ -431,14 +436,20 @@ pub mod basic {
         }
     } 
     fn is_stax(card: &Card) -> bool {
-        if ((card.contains(Restrictions::CanT, CardFields::Restrictions) 
-            || card.contains(Keys::Player, CardFields::Restrictions)
-            || card.contains(Keys::Opponent, CardFields::Keys)) 
-            && card.contains(Restrictions::Each, CardFields::Restrictions))
+        if (card.contains(Restrictions::CanT, CardFields::Restrictions) 
+            || (card.contains(Keys::Player, CardFields::Restrictions)&& card.contains(Restrictions::Each, CardFields::Restrictions))
+            || (card.contains(Keys::Opponent, CardFields::Keys) && card.contains(Restrictions::Each, CardFields::Restrictions))
             || (card.contains(Keys::Cost, CardFields::Keys) 
-                && card.contains(Restrictions::More, CardFields::Restrictions) 
-            )
-            {
+                && card.contains(Restrictions::More, CardFields::Restrictions) ) 
+            || (card.contains(Restrictions::CanT, CardFields::Restrictions) && card.contains(Keys::Activate, CardFields::Keys) ) 
+            || (card.contains(Restrictions::Non, CardFields::Restrictions) && card.contains(CardType::Basic, CardFields::OracleType) )
+            || (card.contains(CardType::Land(None), CardFields::OracleType) && card.contains(Restrictions::Dont, CardFields::Restrictions) && card.contains(Restrictions::Untap, CardFields::Restrictions)))
+        && (card.contains(CardType::Creature(None), CardFields::CardType)
+            || card.contains(CardType::Artifact(None), CardFields::CardType) 
+            || card.contains(CardType::Enchantment(None), CardFields::CardType)
+            || card.contains(CardType::Planeswalker, CardFields::CardType))
+        && !card.contains(Keys::Add, CardFields::Keys)
+        && !card.contains(Keys::ETB, CardFields::Keys){
                 return true;
             }
             return false;

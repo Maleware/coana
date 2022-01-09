@@ -397,6 +397,7 @@ impl_fmt!(for  ArtifactSubtype, SpellSubtype, CreatureSubtype, EnchantmentSubtyp
 
 #[derive(Debug, Clone, Eq, PartialEq, EnumIter, Serialize, Deserialize)]
 pub enum Keys{
+    Activate,
     Cost, 
     Play,
     Redirect,
@@ -465,6 +466,7 @@ impl fmt::Display for Keys {
 }
 #[derive(Debug, Clone, Eq, PartialEq, EnumIter, Serialize, Deserialize)]
 pub enum Keywords{
+    Imprint,
     Deathtouch,
     Defender,
     Double_Strike,
@@ -615,6 +617,7 @@ pub enum Keywords{
 }
 #[derive(Debug, Clone, Eq, PartialEq, EnumIter, Serialize, Deserialize)]
 pub enum Restrictions {
+    Dont,
     Exchange,
     Control,
     Get,
@@ -722,6 +725,7 @@ impl fmt::Display for Restrictions{
             &Restrictions::PlusXX => write!(f, "{}", "+X/+X"),
             &Restrictions::CommanderControl => write!(f, "{}", "control your commander"),
             &Restrictions::GainLife => write!(f, "{}", "gain life"),
+            &Restrictions::Dont => write!(f, "{}", "Don't"), 
             _ => write!(f, "{:?}", self),
         }
     }
