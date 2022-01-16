@@ -130,7 +130,7 @@ pub mod basic {
                                 for key in keys {
                                     if key == &Keys::Add {
                                         // Mana productions to the basis of colors
-                                                *manaprod.entry(color.clone()).or_insert(0) += card.oracle_text.matches(&color.to_string()).count() as u8;
+                                                *manaprod.entry(color).or_insert(0) += card.oracle_text.matches(&color.to_string()).count() as u8;
                                             
                                         for cardtype in &card.cardtype {
                                             match cardtype{ 
@@ -460,6 +460,8 @@ pub mod r#abstract {}
 
 pub mod tutor {
     use std::{collections::HashMap};
+    use strum::IntoEnumIterator;
+
     use crate::types::{Card, Deck, *};
     use crate::statistic::basic;
 
@@ -638,7 +640,74 @@ pub mod tutor {
                     },
                 }
             },
-            CardType::Card => (),
+            CardType::Card => {
+                if !(tutor.contains(CardType::Artifact(None), CardFields::OracleType)
+                || tutor.contains(CardType::Creature(None), CardFields::OracleType)
+                || tutor.contains(CardType::Enchantment(None), CardFields::OracleType)
+                || tutor.contains(CardType::Instant(None), CardFields::OracleType)
+                || tutor.contains(CardType::Sorcery(None), CardFields::OracleType)
+                || tutor.contains(CardType::Land(None), CardFields::OracleType)
+                || tutor.contains(CardType::Planeswalker, CardFields::OracleType) ) {
+                    for card in &deck.library {    
+                        if tutor.contains(Keys::NonLegendary, CardFields::Keys) {
+                            if !card.legendary && card.name != tutor.name{
+                                targets.push(card);
+                            }
+                        } else if tutor.contains(Keys::Legendary, CardFields::Keys) 
+                        && !tutor.contains(Keys::NonLegendary, CardFields::Keys) {
+                            if card.legendary && card.name != tutor.name{
+                                targets.push(card);
+                            }
+                        }else {
+                            for sub in ArtifactSubtype::iter() {
+                                if tutor.contains(&sub, CardFields::OracleText) {
+                                   for typ in &card.cardtype {
+                                        if *typ == CardType::Artifact(Some(vec![sub])) && card.name != tutor.name {
+                                            targets.push(card);
+                                        }
+                                   } 
+                                }
+                            }
+                            for sub in CreatureSubtype::iter() {
+                                if tutor.contains(&sub, CardFields::OracleText) {
+                                    for typ in &card.cardtype {
+                                         if *typ == CardType::Creature(Some(vec![sub])) && card.name != tutor.name{
+                                             targets.push(card);
+                                         }
+                                    } 
+                                 }
+                            }
+                            for sub in EnchantmentSubtype::iter() {
+                                if tutor.contains(&sub, CardFields::OracleText) {
+                                    for typ in &card.cardtype {
+                                         if *typ == CardType::Enchantment(Some(vec![sub])) && card.name != tutor.name{
+                                             targets.push(card);
+                                         }
+                                    } 
+                                 }
+                            }
+                            for sub in SpellSubtype::iter() {
+                                if tutor.contains(&sub, CardFields::OracleText) {
+                                    for typ in &card.cardtype {
+                                         if( *typ == CardType::Instant(Some(vec![sub])) 
+                                         || *typ == CardType::Sorcery(Some(vec![sub])))
+                                         && card.name != tutor.name {
+                                             targets.push(card);
+                                         }
+                                    } 
+                                 }
+                            }
+                        }
+                    }
+                    if targets.len() == 0 {
+                        for card in &deck.library {
+                            if card.name != tutor.name{
+                                targets.push(card);
+                            }
+                        }
+                    } 
+                }    
+            },
             _ => (),
         }
         targets
@@ -1286,5 +1355,5 @@ pub mod tutor {
         }
     }
 }
-
+/****************************************** Eval Powerlevel **************************************************/
 pub mod powerlevel {}

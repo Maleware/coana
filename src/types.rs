@@ -75,7 +75,7 @@ impl fmt::Display for CardType {
         }
     }
 }
-#[derive(Debug, Clone,Eq, PartialEq, EnumIter, Serialize, Deserialize)]
+#[derive(Debug, Clone,Eq, PartialEq, EnumIter, Serialize, Deserialize, Copy)]
 pub enum ArtifactSubtype{
     Blood, 
     Clue, 
@@ -87,14 +87,14 @@ pub enum ArtifactSubtype{
     Treasure, 
     Vehicle,
 }
-#[derive(Debug, Clone,Eq, PartialEq, EnumIter, Serialize, Deserialize)]
+#[derive(Debug, Clone,Eq, PartialEq, EnumIter, Serialize, Deserialize, Copy)]
 pub enum SpellSubtype{
     Adventure, 
     Arcane, 
     Lesson, 
     Trap,
 }
-#[derive(Debug, Clone,Eq, PartialEq, EnumIter, Serialize, Deserialize)]
+#[derive(Debug, Clone,Eq, PartialEq, EnumIter, Serialize, Deserialize, Copy)]
 pub enum CreatureSubtype{
 Advisor,
 Aetherborn,
@@ -358,7 +358,7 @@ Yeti,
 Zombie,
 Zubera,
 }
-#[derive(Debug, Clone,Eq, PartialEq, EnumIter, Serialize, Deserialize)]
+#[derive(Debug, Clone,Eq, PartialEq, EnumIter, Serialize, Deserialize, Copy)]
 pub enum EnchantmentSubtype{
     Aura, 
     Cartouche, 
@@ -369,7 +369,7 @@ pub enum EnchantmentSubtype{
     Shrine, 
     Shard,
 }
-#[derive(Debug, Clone,Eq, PartialEq, EnumIter, Serialize, Deserialize)]
+#[derive(Debug, Clone,Eq, PartialEq, EnumIter, Serialize, Deserialize, Copy)]
 pub enum LandSubtype{
     Plains, 
     Island, 
@@ -384,7 +384,7 @@ pub enum LandSubtype{
     UrzasPowerPlant, 
     UrzasTower,
 }
-#[derive(Debug, Clone,Eq, PartialEq, EnumIter, Serialize, Deserialize)]
+#[derive(Debug, Clone,Eq, PartialEq, EnumIter, Serialize, Deserialize, Copy)]
 pub enum Stats{
     Power(u8),
     Toughness(u8),
@@ -404,8 +404,10 @@ impl_fmt!(for  ArtifactSubtype, SpellSubtype, CreatureSubtype, EnchantmentSubtyp
 
 /*************************************** Keywords, Zones, Restrictions and Colours *************************************/
 
-#[derive(Debug, Clone, Eq, PartialEq, EnumIter, Serialize, Deserialize)]
+#[derive(Debug, Clone, Eq, PartialEq, EnumIter, Serialize, Deserialize, Copy)]
 pub enum Keys{
+    Legendary,
+    NonLegendary,
     With,
     Loyality,
     Power,
@@ -487,7 +489,7 @@ impl fmt::Display for Keys {
         }
     }
 }
-#[derive(Debug, Clone, Eq, PartialEq, EnumIter, Serialize, Deserialize)]
+#[derive(Debug, Clone, Eq, PartialEq, EnumIter, Serialize, Deserialize, Copy)]
 pub enum Keywords{
     Imprint,
     Deathtouch,
@@ -638,7 +640,7 @@ pub enum Keywords{
     Cleave,
     Training,
 }
-#[derive(Debug, Clone, Eq, PartialEq, EnumIter, Serialize, Deserialize)]
+#[derive(Debug, Clone, Eq, PartialEq, EnumIter, Serialize, Deserialize, Copy)]
 pub enum Restrictions {
     Dont,
     Exchange,
@@ -755,7 +757,7 @@ impl fmt::Display for Restrictions{
         }
     }
 }
-#[derive(Debug, Clone, Eq, PartialEq, EnumIter, Serialize, Deserialize)]
+#[derive(Debug, Clone, Eq, PartialEq, EnumIter, Serialize, Deserialize, Copy)]
 pub enum Zones{
     Battlefield,
     Hand,
@@ -764,7 +766,7 @@ pub enum Zones{
     CommandZone,
     Library,
 }
-#[derive(Debug, Clone, Eq, PartialEq, EnumIter, Serialize, Deserialize, Hash)]
+#[derive(Debug, Clone, Eq, PartialEq, EnumIter, Serialize, Deserialize, Hash, Copy)]
 pub enum Colors {
     White,
     Blue,
