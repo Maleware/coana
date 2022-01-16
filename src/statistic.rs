@@ -567,18 +567,21 @@ pub mod tutor {
                 }
             },
             CardType::Sorcery(_)=> {
-                if tutor.contains(Keys::With, CardFields::Keys){
-                    targets.append(&mut restrictions(deck, tutor, sdeck, CardType::Sorcery(None)));
-                } else {
-                    match color_restrictions(sdeck, tutor, typ) {
-                        Some(mut result) => {targets.append(&mut result)},
-                        None => {
-                            for card in &sdeck.sorcerys {
-                                if card.name != tutor.name {
-                                    targets.push(*card)
+                if !tutor.contains(Restrictions::Only, CardFields::Restrictions) 
+                && !tutor.contains(Keys::Activate, CardFields::Keys) {
+                    if tutor.contains(Keys::With, CardFields::Keys){
+                        targets.append(&mut restrictions(deck, tutor, sdeck, CardType::Sorcery(None)));
+                    } else {
+                        match color_restrictions(sdeck, tutor, typ) {
+                            Some(mut result) => {targets.append(&mut result)},
+                            None => {
+                                for card in &sdeck.sorcerys {
+                                    if card.name != tutor.name {
+                                        targets.push(*card)
+                                    }
                                 }
-                            }
-                        },
+                            },
+                        }
                     }
                 }
             },
