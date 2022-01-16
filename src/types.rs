@@ -485,6 +485,7 @@ impl fmt::Display for Keys {
             &Keys::SBlack => write!(f, "{}", "black"),
             &Keys::SRed => write!(f, "{}", "red"),
             &Keys::SGreen => write!(f, "{}", "green"),
+
             _ => write!(f, "{:?}", self),
         }
     }
@@ -642,6 +643,7 @@ pub enum Keywords{
 }
 #[derive(Debug, Clone, Eq, PartialEq, EnumIter, Serialize, Deserialize, Copy)]
 pub enum Restrictions {
+    OrLess,
     Dont,
     Exchange,
     Control,
@@ -753,6 +755,7 @@ impl fmt::Display for Restrictions{
             &Restrictions::CommanderControl => write!(f, "{}", "control your commander"),
             &Restrictions::GainLife => write!(f, "{}", "gain life"),
             &Restrictions::Dont => write!(f, "{}", "Don't"), 
+            &Restrictions::OrLess => write!(f, "{}", "or less"),
             _ => write!(f, "{:?}", self),
         }
     }

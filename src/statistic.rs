@@ -733,15 +733,17 @@ pub mod tutor {
                       }
                   } 
                 } else if tutor.contains(Restrictions::Less, CardFields::Restrictions) 
-                && !tutor.contains(Restrictions::Equal, CardFields::Restrictions) {
+                && !tutor.contains(Restrictions::Equal, CardFields::Restrictions)
+                && !tutor.contains(Restrictions::OrLess, CardFields::Restrictions)  {
                    result.append(&mut less(deck, tutor, cardtype));
 
                 }else if !tutor.contains(Restrictions::Less, CardFields::Restrictions) 
                 && tutor.contains(Restrictions::Equal, CardFields::Restrictions) {
                    result.append(&mut equal(deck, tutor, cardtype)); 
 
-                }else if tutor.contains(Restrictions::Less, CardFields::Restrictions) 
-                && tutor.contains(Restrictions::Equal, CardFields::Restrictions) {
+                }else if( tutor.contains(Restrictions::Less, CardFields::Restrictions) 
+                && tutor.contains(Restrictions::Equal, CardFields::Restrictions) )
+                || tutor.contains(Restrictions::OrLess, CardFields::Restrictions) {
                     result.append(&mut less_or_equal(deck, tutor, cardtype));
                 }  
             } else {
@@ -798,29 +800,33 @@ pub mod tutor {
             }  
         }else if tutor.contains(Keys::Power, CardFields::Keys) {
             if tutor.contains(Restrictions::Less, CardFields::Restrictions) 
-            && !tutor.contains(Restrictions::Equal, CardFields::Restrictions) {
+            && !tutor.contains(Restrictions::Equal, CardFields::Restrictions) 
+            && !tutor.contains(Restrictions::OrLess, CardFields::Restrictions) {
                 result.append(&mut less(deck, tutor, cardtype)); 
 
             }else if !tutor.contains(Restrictions::Less, CardFields::Restrictions) 
             && tutor.contains(Restrictions::Equal, CardFields::Restrictions) {
                 result.append(&mut equal(deck,tutor,cardtype));
 
-            }else if tutor.contains(Restrictions::Less, CardFields::Restrictions) 
-            && tutor.contains(Restrictions::Equal, CardFields::Restrictions) {
+            }else if (tutor.contains(Restrictions::Less, CardFields::Restrictions) 
+            && tutor.contains(Restrictions::Equal, CardFields::Restrictions) )
+            || tutor.contains(Restrictions::OrLess, CardFields::Restrictions){
                 result.append(&mut less_or_equal(deck,tutor,cardtype)); 
             }
        
         } else if tutor.contains(Keys::Toughness, CardFields::Keys){
             if tutor.contains(Restrictions::Less, CardFields::Restrictions) 
-            && !tutor.contains(Restrictions::Equal, CardFields::Restrictions) {
+            && !tutor.contains(Restrictions::Equal, CardFields::Restrictions) 
+            && !tutor.contains(Restrictions::OrLess, CardFields::Restrictions) {
                 result.append(&mut less(deck, tutor, cardtype)); 
 
             }else if !tutor.contains(Restrictions::Less, CardFields::Restrictions) 
             && tutor.contains(Restrictions::Equal, CardFields::Restrictions) {
                 result.append(&mut equal(deck, tutor, cardtype)); 
 
-            }else if tutor.contains(Restrictions::Less, CardFields::Restrictions) 
-            && tutor.contains(Restrictions::Equal, CardFields::Restrictions) {
+            }else if( tutor.contains(Restrictions::Less, CardFields::Restrictions) 
+            && tutor.contains(Restrictions::Equal, CardFields::Restrictions) )
+            || tutor.contains(Restrictions::OrLess, CardFields::Restrictions)  {
                 result.append(&mut less_or_equal(deck,tutor,cardtype)); 
             }
         }
