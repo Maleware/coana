@@ -460,7 +460,7 @@ pub mod r#abstract {}
 
 pub mod tutor {
     use std::{collections::HashMap};
-    use crate::types::{Card, Deck, *, self};
+    use crate::types::{Card, Deck, *};
     use crate::statistic::basic;
 
     pub fn tutor<'deck>(deck: &'deck Deck) -> HashMap<&'deck String, Vec<&'deck Card>> {
@@ -470,7 +470,9 @@ pub mod tutor {
 
         for card in &deck.library {           
             if card.contains(Keys::Search, CardFields::Keys) 
-            && !card.contains(Keys::Opponent, CardFields::Keys) {
+            && !card.contains(Keys::Opponent, CardFields::Keys)
+            // Tutor can force you to sacrifce a permanent of the chosen type. Diabolic intent and Arcum Dagson force you to sacrice a creature to find a another type 
+            && card.name != String::from("Diabolic Intent") {
                 let mut buffer: Vec<&Card> = Vec::new();
                 // only links if oracle text contains card type. For Subtypes tutors, Cardtype is not namend on tutor.
                 match &card.oracle_types {
@@ -479,17 +481,12 @@ pub mod tutor {
                            buffer.append(&mut link_target(&card, &deck, &mut sdeck, typ)); 
                         }
                     },
-                    // Subtypes need to be matched here, without Cardtype, take care of transmute here
+                    // Subtypes need to be matched here, without Cardtype
                     None => (),
                 }
                 tutor.insert(&card.name, buffer);
             }
-        }
-        for (_tutor, targets) in &mut tutor {
-            //ugly hack to get rid of double linked cards
-        //    targets.sort_by_key(|card| card.name.clone());
-        //    targets.dedup()
-        }
+        } 
         tutor
     }
     fn link_target<'deck>(tutor: &Card, deck: &'deck Deck, sdeck: &mut basic::Cardtype<'deck>, typ: &CardType) -> Vec<&'deck Card> {
@@ -509,12 +506,13 @@ pub mod tutor {
             },
             CardType::Creature(_) => {
                 if tutor.contains(Keys::With, CardFields::Keys)
-                && (!tutor.contains(Keys::Exile, CardFields::Keys) 
-                    || !tutor.contains(Keys::Create, CardFields::Keys)) {
+                && !(tutor.contains(Keys::Exile, CardFields::Keys) 
+                    || tutor.contains(Keys::Token, CardFields::Keys)) {
                     targets.append(&mut restrictions(deck, tutor, sdeck, CardType::Creature(None)));
                 } else {
-                    if !tutor.contains(Keys::Exile, CardFields::Keys) 
-                    || !tutor.contains(Keys::Create, CardFields::Keys) {
+                    if !(tutor.contains(Keys::Exile, CardFields::Keys) 
+                    || tutor.contains(Keys::Token, CardFields::Keys) )
+                    && tutor.name != String::from("Arcum Dagsson"){
                         for card in &sdeck.creatures {
                             if card.name != tutor.name {
                                 targets.push(*card)
@@ -567,7 +565,6 @@ pub mod tutor {
                     }
                 }
             },
-            CardType::Basic => (),
             CardType::Land(subtype) => {
                 match subtype {
                     Some(subtypes) => {
@@ -628,7 +625,14 @@ pub mod tutor {
         || tutor.contains(Restrictions::ManaCost, CardFields::Restrictions) {
             if !(tutor.contains(Restrictions::Plus, CardFields::Restrictions) 
             || tutor.contains(String::from("X"), CardFields::ManaCost)){
-                if tutor.contains(Restrictions::Less, CardFields::Restrictions) 
+                // Special excuse for Urza's Saga, need to think about different representation of planeswalker and saga textboxes
+                if tutor.name == String::from("Urza's Saga"){
+                  for card in &sdeck.artifacts {
+                      if card.cmc <= 1.0 {
+                          result.push(*card);
+                      }
+                  } 
+                } else if tutor.contains(Restrictions::Less, CardFields::Restrictions) 
                 && !tutor.contains(Restrictions::Equal, CardFields::Restrictions) {
                    result.append(&mut less(deck, tutor, cardtype));
 
