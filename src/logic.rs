@@ -129,7 +129,7 @@ pub mod thread_fn {
                         for _j in 0..quantity_card[0].parse::<u8>().expect("List format error: No integer.") {   
                             tx.send(t.clone()).expect("Thread can not send");
                         }
-                        thread::sleep(Duration::from_millis(10))
+                        //thread::sleep(Duration::from_millis(10))
                     },
                     Err(e) => println!("Thread error detected: {}", e),
                 } 
