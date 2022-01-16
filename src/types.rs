@@ -406,6 +406,7 @@ impl_fmt!(for  ArtifactSubtype, SpellSubtype, CreatureSubtype, EnchantmentSubtyp
 
 #[derive(Debug, Clone, Eq, PartialEq, EnumIter, Serialize, Deserialize, Copy)]
 pub enum Keys{
+    Remove,
     Legendary,
     NonLegendary,
     With,

@@ -369,7 +369,8 @@ pub mod basic {
             && card.contains(Restrictions::Get, CardFields::Restrictions)
             && (card.contains(Restrictions::PlusSymbol, CardFields::Restrictions) && !card.contains(CardType::Planeswalker, CardFields::CardType))
             && !card.contains(Keywords::Exalted, CardFields::Keywords)
-            && !card.contains(Restrictions::MinusSymbol, CardFields::Restrictions){
+            && !card.contains(Restrictions::MinusSymbol, CardFields::Restrictions)
+            && !card.contains(Keys::Remove, CardFields::Keys){
                 return true; 
         } else {
             return false;
