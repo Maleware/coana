@@ -292,7 +292,7 @@ pub mod basic {
         return Effect{draw, bounce, removal, boardwipe, lord, counter, payoff, recursion, reanimation, stax};
     }
     fn is_draw(card: &Card) -> bool {
-        if (( card.contains(Keys::Draw, CardFields::Keys) 
+        if (( (card.contains(Keys::Draw, CardFields::Keys) && !card.contains(Restrictions::CanT, CardFields::Restrictions) )
         && (!card.contains(Restrictions::Drawstep, CardFields::Restrictions ) && !card.contains(Restrictions::After, CardFields::Restrictions) ) 
         && (!card.contains(Keys::Exile, CardFields::Keys) && !card.contains(Restrictions::Instead, CardFields::Restrictions))   )
         // Impulsive draw: Exile top card of your library 
@@ -483,7 +483,6 @@ pub mod tutor {
                            buffer.append(&mut link_target(&card, &deck, &mut sdeck, typ)); 
                         }
                     },
-                    // Subtypes need to be matched here, without Cardtype
                     None => (),
                 }
                 tutor.insert(&card.name, buffer);
@@ -632,10 +631,13 @@ pub mod tutor {
                     },
                     None => {
                         for card in &sdeck.lands {
-                            if card.name != tutor.name && !tutor.contains(CardType::Basic, CardFields::OracleType){
+                            if card.name != tutor.name 
+                            && !tutor.contains(CardType::Basic, CardFields::OracleType)
+                            && !tutor.contains(Keys::Black, CardFields::Keys){
                                 targets.push(*card);
                             } else if card.name != tutor.name && tutor.contains(CardType::Basic, CardFields::OracleType) { 
-                                if card.contains(CardType::Basic, CardFields::CardType) {
+                                if card.contains(CardType::Basic, CardFields::CardType) 
+                                && !tutor.contains(Keys::Black, CardFields::Keys){
                                     targets.push(*card);
                                 }
                             }    
@@ -649,7 +651,8 @@ pub mod tutor {
                 || tutor.contains(CardType::Enchantment(None), CardFields::OracleType)
                 || tutor.contains(CardType::Instant(None), CardFields::OracleType)
                 || tutor.contains(CardType::Sorcery(None), CardFields::OracleType)
-                || tutor.contains(CardType::Land(None), CardFields::OracleType)
+                || ( tutor.contains(CardType::Land(None), CardFields::OracleType) 
+                    && !tutor.contains(Restrictions::Control, CardFields::Restrictions) )
                 || tutor.contains(CardType::Planeswalker, CardFields::OracleType) ) {
                     for card in &deck.library {    
                         if tutor.contains(Keys::NonLegendary, CardFields::Keys) {
@@ -662,6 +665,8 @@ pub mod tutor {
                                 targets.push(card);
                             }
                         }else {
+                            // TODO: Bug e.g. tutor Dragon target: Creature["Elder", "Dragon"] can not match. Need to match any subtype from target against target.
+                            // therefore match typ to Subtype categroy, then match every Subtype item in card with the to search subtype
                             for sub in ArtifactSubtype::iter() {
                                 if tutor.contains(&sub, CardFields::OracleText) {
                                    for typ in &card.cardtype {
@@ -672,7 +677,7 @@ pub mod tutor {
                                 }
                             }
                             for sub in CreatureSubtype::iter() {
-                                if tutor.contains(&sub, CardFields::OracleText) {
+                                if tutor.contains(&sub, CardFields::OracleText) && !tutor.contains(Keywords::Suspend, CardFields::Keywords){
                                     for typ in &card.cardtype {
                                          if *typ == CardType::Creature(Some(vec![sub])) && card.name != tutor.name{
                                              targets.push(card);
@@ -719,7 +724,7 @@ pub mod tutor {
         let mut result: Vec<&Card> = Vec::new();
         if tutor.contains(Keywords::Transmute, CardFields::Keywords){
             for card in &deck.library {
-                if card.cmc == tutor.cmc {
+                if card.cmc == tutor.cmc && card.name != tutor.name{
                     result.push(&card);
                 }
             }
