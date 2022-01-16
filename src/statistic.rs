@@ -497,26 +497,37 @@ pub mod tutor {
                 if tutor.contains(Keys::With, CardFields::Keys){
                     targets.append(&mut restrictions(deck, tutor, sdeck, CardType::Artifact(None)));
                 } else {
-                    for card in &sdeck.artifacts {
-                        if card.name != tutor.name {
-                            targets.push(*card)
-                        }
-                    }
+                    match color_restrictions(sdeck, tutor, typ) {
+                        Some(mut result) => {targets.append(&mut result)},
+                        None => {
+                            for card in &sdeck.artifacts {
+                                if card.name != tutor.name {
+                                    targets.push(*card)
+                                }
+                            }
+                        },
+                    }   
                 }
             },
             CardType::Creature(_) => {
                 if tutor.contains(Keys::With, CardFields::Keys)
-                && !(tutor.contains(Keys::Exile, CardFields::Keys) 
+                && !((tutor.contains(Keys::Exile, CardFields::Keys) && !tutor.contains(&tutor.name, CardFields::OracleText))
                     || tutor.contains(Keys::Token, CardFields::Keys)) {
                     targets.append(&mut restrictions(deck, tutor, sdeck, CardType::Creature(None)));
                 } else {
                     if !(tutor.contains(Keys::Exile, CardFields::Keys) 
                     || tutor.contains(Keys::Token, CardFields::Keys) )
                     && tutor.name != String::from("Arcum Dagsson"){
-                        for card in &sdeck.creatures {
-                            if card.name != tutor.name {
-                                targets.push(*card)
-                            }
+
+                        match color_restrictions(sdeck, tutor, typ) {
+                            Some(mut result) => {targets.append(&mut result)},
+                            None => {
+                                for card in &sdeck.creatures {
+                                    if card.name != tutor.name {
+                                        targets.push(*card)
+                                    }
+                                }
+                            },
                         }
                     }
                 }
@@ -525,10 +536,15 @@ pub mod tutor {
                 if tutor.contains(Keys::With, CardFields::Keys){
                     targets.append(&mut restrictions(deck, tutor, sdeck, CardType::Enchantment(None)));
                 } else {
-                    for card in &sdeck.enchantments {
-                        if card.name != tutor.name {
-                            targets.push(*card)
-                        }
+                    match color_restrictions(sdeck, tutor, typ) {
+                        Some(mut result) => {targets.append(&mut result)},
+                        None => {
+                            for card in &sdeck.enchantments {
+                                if card.name != tutor.name {
+                                    targets.push(*card)
+                                }
+                            }
+                        },
                     }
                 }
             },
@@ -536,10 +552,15 @@ pub mod tutor {
                 if tutor.contains(Keys::With, CardFields::Keys){
                     targets.append(&mut restrictions(deck, tutor, sdeck, CardType::Instant(None)));
                 } else {
-                    for card in &sdeck.instants {
-                        if card.name != tutor.name {
-                            targets.push(*card)
-                        }
+                    match color_restrictions(sdeck, tutor, typ) {
+                        Some(mut result) => {targets.append(&mut result)},
+                        None => {
+                            for card in &sdeck.instants {
+                                if card.name != tutor.name {
+                                    targets.push(*card)
+                                }
+                            }
+                        },
                     }
                 }
             },
@@ -547,10 +568,15 @@ pub mod tutor {
                 if tutor.contains(Keys::With, CardFields::Keys){
                     targets.append(&mut restrictions(deck, tutor, sdeck, CardType::Sorcery(None)));
                 } else {
-                    for card in &sdeck.sorcerys {
-                        if card.name != tutor.name {
-                            targets.push(*card)
-                        }
+                    match color_restrictions(sdeck, tutor, typ) {
+                        Some(mut result) => {targets.append(&mut result)},
+                        None => {
+                            for card in &sdeck.sorcerys {
+                                if card.name != tutor.name {
+                                    targets.push(*card)
+                                }
+                            }
+                        },
                     }
                 }
             },
@@ -558,10 +584,15 @@ pub mod tutor {
                 if tutor.contains(Keys::With, CardFields::Keys){
                     targets.append(&mut restrictions(deck, tutor, sdeck, CardType::Planeswalker));
                 } else {
-                    for card in &sdeck.planeswalkers {
-                        if card.name != tutor.name {
-                            targets.push(*card)
-                        }
+                    match color_restrictions(sdeck, tutor, typ) {
+                        Some(mut result) => {targets.append(&mut result)},
+                        None => {
+                            for card in &sdeck.planeswalkers {
+                                if card.name != tutor.name {
+                                    targets.push(*card)
+                                }
+                            }
+                        },
                     }
                 }
             },
@@ -654,35 +685,45 @@ pub mod tutor {
                         }
                     },
                     CardType::Creature(_) => {
-                        for card in &sdeck.creatures {
-                            if card.name != tutor.name {
-                                result.push(*card);
-                            }
-                        }},
+                        match color_restrictions(sdeck, tutor, &cardtype) {
+                            Some(mut targets) => {result.append(&mut targets)},
+                            None => {
+                                for card in &sdeck.creatures {
+                                    if card.name != tutor.name {
+                                        result.push(*card)
+                                    }
+                                }
+                            },
+                        }
+                    },
                     CardType::Enchantment(_) => {
                         for card in &sdeck.enchantments {
                             if card.name != tutor.name {
                                 result.push(*card);
                             }
-                        }},
+                        }
+                    },
                     CardType::Instant(_) => {
                         for card in &sdeck.instants {
                             if card.name != tutor.name {
                                 result.push(*card);
                             }
-                        }},
+                        }
+                    },
                     CardType::Sorcery(_)=> {
                         for card in &sdeck.sorcerys {
                             if card.name != tutor.name {
                                 result.push(*card);
                             }
-                        }},
+                        }
+                    },
                     CardType::Planeswalker => {
                         for card in &sdeck.planeswalkers {
                             if card.name != tutor.name {
                                 result.push(*card);
                             }
-                        }}, 
+                        }
+                    }, 
                     _ => (),
                 }   
             }  
@@ -1176,6 +1217,73 @@ pub mod tutor {
             None => (),
         }
         result
+    }
+    fn color_restrictions<'deck>(sdeck: &mut basic::Cardtype<'deck>, tutor: &Card ,cardtype: &CardType) -> Option<Vec<&'deck Card>> {
+        println!("Called color restricitons for: {}", tutor.name);
+        let mut targets: Vec<&Card> = Vec::new();
+        let mut sorted_deck: &Vec<&Card> = &Vec::new();
+
+        match cardtype {
+            CardType::Artifact(_) => {sorted_deck = &sdeck.artifacts},
+            CardType::Creature(_) => {sorted_deck = &sdeck.creatures},
+            CardType::Enchantment(_) =>{sorted_deck = &sdeck.enchantments},
+            CardType::Sorcery(_) => {sorted_deck = &sdeck.sorcerys},
+            CardType::Instant(_) => {sorted_deck = &sdeck.instants},
+            CardType::Planeswalker => {sorted_deck = &sdeck.planeswalkers},
+            _ => (),
+        }
+
+        match &tutor.keys {
+            Some(keys) => {
+                for key in keys {
+                    match key {
+                        Keys::SWhite => {
+                            for card in sorted_deck {
+                                if card.name != tutor.name && card.contains(Colors::White, CardFields::ManaCost) {
+                                    targets.push(*card)
+                                }
+                            }
+                        },
+                        Keys::SBlue => {
+                            for card in sorted_deck {
+                                if card.name != tutor.name && card.contains(Colors::Blue, CardFields::ManaCost) {
+                                    targets.push(*card)
+                                }
+                            }
+                        },
+                        Keys::SBlack => {
+                            for card in sorted_deck  {
+                                if card.name != tutor.name && card.contains(Colors::Black, CardFields::ManaCost) {
+                                    targets.push(*card)
+                                }
+                            }
+                        },
+                        Keys::SRed => {
+                            for card in sorted_deck  {
+                                if card.name != tutor.name && card.contains(Colors::Red, CardFields::ManaCost) {
+                                    targets.push(*card)
+                                }
+                            }
+                        },
+                        Keys::SGreen => {
+                            println!("Color restriction for: {}", tutor.name);
+                            for card in sorted_deck  {
+                                if card.name != tutor.name && card.contains(Colors::Green, CardFields::ManaCost) {
+                                    targets.push(*card)
+                                }
+                            }
+                        },
+                        _ => (),
+                    }
+                }
+            },
+            None => (),
+        }
+        if targets.len() != 0 {
+            return Some(targets);
+        }else {
+            return None;
+        }
     }
 }
 

@@ -450,6 +450,11 @@ pub enum Keys{
     Black,
     Red,
     Green,
+    SWhite,
+    SBlue,
+    SBlack,
+    SRed,
+    SGreen,
     Colourless,
 //    AnyColor,
 //    EachColor,
@@ -473,6 +478,11 @@ impl fmt::Display for Keys {
             &Keys::AnyMana => write!(f, "{}", "any one color"),
             &Keys::OneMana => write!(f, "{}", "one mana of any"),
             &Keys::Redirect => write!(f, "{}", "choose new target"),
+            &Keys::SWhite => write!(f, "{}", "white"),
+            &Keys::SBlue => write!(f, "{}", "blue"),
+            &Keys::SBlack => write!(f, "{}", "black"),
+            &Keys::SRed => write!(f, "{}", "red"),
+            &Keys::SGreen => write!(f, "{}", "green"),
             _ => write!(f, "{:?}", self),
         }
     }
@@ -901,7 +911,7 @@ impl Card {
                 }
             },
             CardFields::ManaCost => { 
-                if self.mana_cost.contains(&search.to_string()) {
+                if self.mana_cost.contains(&search.to_string().replace("\"", "")) {
                     return true;
                 } else {
                     return false;
