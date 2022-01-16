@@ -473,6 +473,7 @@ pub mod tutor {
         for card in &deck.library {           
             if card.contains(Keys::Search, CardFields::Keys) 
             && !card.contains(Keys::Opponent, CardFields::Keys)
+            && !card.contains(Restrictions::CanT, CardFields::Restrictions)
             // Tutor can force you to sacrifce a permanent of the chosen type. Diabolic intent and Arcum Dagson force you to sacrice a creature to find a another type 
             && card.name != String::from("Diabolic Intent") {
                 let mut buffer: Vec<&Card> = Vec::new();
@@ -847,6 +848,7 @@ pub mod tutor {
             Some(restrictions) => {
                 for restriciton in restrictions {
                     match restriciton {
+                        /* 
                         Restrictions::OneStr => {
                             for card in &deck.library {
                                 if card.name != tutor.name {
@@ -874,6 +876,7 @@ pub mod tutor {
                                 }
                             }
                         },
+                        */
                         Restrictions::Zero => (),
                         Restrictions::One => {
                             for card in &deck.library {
@@ -995,6 +998,7 @@ pub mod tutor {
             Some(restrictions) => {
                 for restriciton in restrictions {
                     match restriciton {
+                        /*
                         Restrictions::OneStr => {
                             for card in &deck.library {
                                 if card.name != tutor.name {
@@ -1022,6 +1026,7 @@ pub mod tutor {
                                 }
                             }
                         },
+                        */
                         Restrictions::Zero => {
                             for card in &deck.library {
                                 if card.name != tutor.name {
@@ -1151,6 +1156,7 @@ pub mod tutor {
             Some(restrictions) => {
                 for restriciton in restrictions {
                     match restriciton {
+                        /*
                         Restrictions::OneStr => {
                             for card in &deck.library {
                                 if card.name != tutor.name {
@@ -1178,6 +1184,7 @@ pub mod tutor {
                                 }
                             }
                         },
+                        */
                         Restrictions::Zero => {
                             for card in &deck.library {
                                 if card.name != tutor.name {
