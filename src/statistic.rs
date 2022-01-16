@@ -57,7 +57,7 @@ pub mod basic {
         pub stax: Vec<&'deck Card>,
         
     }
-    
+   // TODO: add fast mana and rituals 
     pub fn cardtype<'deck> (deck: &'deck Deck) -> Cardtype<'deck> {
         let mut creatures = Vec::new();
         let mut enchantments = Vec::new();
@@ -424,11 +424,12 @@ pub mod basic {
     fn is_reanimation(card: &Card) -> bool {
         if( (card.contains(Keys::Return, CardFields::Keys) 
             && !(card.contains(card.name.to_string(), CardFields::OracleText) && !card.contains(Keys::Tapped, CardFields::Keys) )) 
-            ||  card.contains(Keys::Put, CardFields::Keys) )
+            ||  (card.contains(Keys::Put, CardFields::Keys) ))
         && card.contains(Zones::Graveyard, CardFields::Zones) 
         && (card.contains(Zones::Battlefield, CardFields::Zones) && !card.contains(Zones::Hand, CardFields::Zones) )
         && !card.contains(Keys::OneMana, CardFields::Keys)
         && !card.contains(Restrictions::Instead, CardFields::Restrictions)
+        && !card.contains(Keys::Search, CardFields::Keys)
         { 
             return true;
         } else {
