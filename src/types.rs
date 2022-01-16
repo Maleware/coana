@@ -390,6 +390,15 @@ pub enum Stats{
     Toughness(u8),
     Loyality(u8),
 }
+impl Stats {
+    pub fn to_key(&self) -> Keys {
+        match self {
+            Stats::Power(_) => Keys::Power,
+            Stats::Toughness(_) => Keys::Toughness,
+            Stats::Loyality(_) => Keys::Loyality,
+        }
+    }
+}
 
 impl_fmt!(for  ArtifactSubtype, SpellSubtype, CreatureSubtype, EnchantmentSubtype, LandSubtype, Stats);
 
@@ -397,6 +406,10 @@ impl_fmt!(for  ArtifactSubtype, SpellSubtype, CreatureSubtype, EnchantmentSubtyp
 
 #[derive(Debug, Clone, Eq, PartialEq, EnumIter, Serialize, Deserialize)]
 pub enum Keys{
+    With,
+    Loyality,
+    Power,
+    Toughness,
     Activate,
     Cost, 
     Play,
@@ -637,6 +650,7 @@ pub enum Restrictions {
     All,
     Cmc,
     ManaValue,
+    ManaCost,
     OneStr,
     TwoStr,
     ThreeStr,
@@ -715,6 +729,7 @@ impl fmt::Display for Restrictions{
             &Restrictions::AtBeginnOf => write!(f, "{}", "At the begin of"),
             &Restrictions::Cmc => write!(f, "{}", "cmc"),
             &Restrictions::ManaValue => write!(f, "{}", "Mana Value"),
+            &Restrictions::ManaCost => write!(f, "{}", "Mana Cost"),
             &Restrictions::Xis => write!(f, "{}", "X is"),
             &Restrictions::Xor => write!(f, "{}", "X or"),
             &Restrictions::PlusSymbol => write!(f, "{}", "+"),
@@ -813,7 +828,7 @@ pub struct Card {
     pub oracle_types: Option<Vec<CardType>>,
     pub restrictions: Option<Vec<Restrictions>>,
 }
-#[derive(Debug, Clone, Eq, PartialEq, EnumIter)]
+#[derive(Debug, Clone, Eq, PartialEq, EnumIter, Hash)]
 pub enum CardFields {
     Cmc,
     ManaCost,

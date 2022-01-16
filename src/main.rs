@@ -1,6 +1,6 @@
 use std::{fs, io};
 use clap::{App, Arg};
-use crate::{types::{Deck, CEResult}, logic::database};
+use crate::{types::{Deck, CEResult}, logic::database, statistic::tutor};
 use crate::statistic::basic;
 
 mod types;
@@ -89,6 +89,7 @@ fn main() {
             Ok(t) => {
                 println!("Deck name: {}", t.name);
                 let basics = basic::Basic::new(&t);
+                let tutors = tutor::tutor(&t);
                 println!("Basic Statistics: ");
                 println!("\nCreatures: {}", basics.cardtype.creatures.len());
                 for item in basics.cardtype.creatures {
@@ -186,6 +187,13 @@ fn main() {
                 for stax in basics.effect.stax {
                     println!("{}", stax.name);
                 } 
+                println!("Tutorlinking: \n"); 
+                for (tutor,link) in tutors {
+                    println!("\n Targets for {} : \n", &tutor);
+                    for card in link {
+                        println!("{}",card.name);
+                    }
+                }
                 Deck::save(&t);  
             },
             Err(e) => println!("Error: {}", e),

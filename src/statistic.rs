@@ -458,5 +458,721 @@ pub mod basic {
 
 pub mod r#abstract {}
 
-pub mod tutor {}
+pub mod tutor {
+    use std::{collections::HashMap};
+    use crate::types::{Card, Deck, *, self};
+    use crate::statistic::basic;
+
+    pub fn tutor<'deck>(deck: &'deck Deck) -> HashMap<&'deck String, Vec<&'deck Card>> {
+        let mut tutor: HashMap<&'deck String, Vec<&'deck Card>> = HashMap::new();
+
+        let mut sdeck = basic::Basic::new(&deck).cardtype;
+
+        for card in &deck.library {           
+            if card.contains(Keys::Search, CardFields::Keys) 
+            && !card.contains(Keys::Opponent, CardFields::Keys) {
+                let mut buffer: Vec<&Card> = Vec::new();
+                // only links if oracle text contains card type. For Subtypes tutors, Cardtype is not namend on tutor.
+                match &card.oracle_types {
+                    Some(types) => {
+                        for typ in types {
+                           buffer.append(&mut link_target(&card, &deck, &mut sdeck, typ)); 
+                        }
+                    },
+                    // Subtypes need to be matched here, without Cardtype, take care of transmute here
+                    None => (),
+                }
+                tutor.insert(&card.name, buffer);
+            }
+        }
+        for (_tutor, targets) in &mut tutor {
+            //ugly hack to get rid of double linked cards
+        //    targets.sort_by_key(|card| card.name.clone());
+        //    targets.dedup()
+        }
+        tutor
+    }
+    fn link_target<'deck>(tutor: &Card, deck: &'deck Deck, sdeck: &mut basic::Cardtype<'deck>, typ: &CardType) -> Vec<&'deck Card> {
+        let mut targets: Vec<&'deck Card> = Vec::new();
+
+        match typ {
+            CardType::Artifact(_) => {
+                if tutor.contains(Keys::With, CardFields::Keys){
+                    targets.append(&mut restrictions(deck, tutor, sdeck, CardType::Artifact(None)));
+                } else {
+                    for card in &sdeck.artifacts {
+                        if card.name != tutor.name {
+                            targets.push(*card)
+                        }
+                    }
+                }
+            },
+            CardType::Creature(_) => {
+                if tutor.contains(Keys::With, CardFields::Keys)
+                && (!tutor.contains(Keys::Exile, CardFields::Keys) 
+                    || !tutor.contains(Keys::Create, CardFields::Keys)) {
+                    targets.append(&mut restrictions(deck, tutor, sdeck, CardType::Creature(None)));
+                } else {
+                    if !tutor.contains(Keys::Exile, CardFields::Keys) 
+                    || !tutor.contains(Keys::Create, CardFields::Keys) {
+                        for card in &sdeck.creatures {
+                            if card.name != tutor.name {
+                                targets.push(*card)
+                            }
+                        }
+                    }
+                }
+            },
+            CardType::Enchantment(_) => {
+                if tutor.contains(Keys::With, CardFields::Keys){
+                    targets.append(&mut restrictions(deck, tutor, sdeck, CardType::Enchantment(None)));
+                } else {
+                    for card in &sdeck.enchantments {
+                        if card.name != tutor.name {
+                            targets.push(*card)
+                        }
+                    }
+                }
+            },
+            CardType::Instant(_) => {
+                if tutor.contains(Keys::With, CardFields::Keys){
+                    targets.append(&mut restrictions(deck, tutor, sdeck, CardType::Instant(None)));
+                } else {
+                    for card in &sdeck.instants {
+                        if card.name != tutor.name {
+                            targets.push(*card)
+                        }
+                    }
+                }
+            },
+            CardType::Sorcery(_)=> {
+                if tutor.contains(Keys::With, CardFields::Keys){
+                    targets.append(&mut restrictions(deck, tutor, sdeck, CardType::Sorcery(None)));
+                } else {
+                    for card in &sdeck.sorcerys {
+                        if card.name != tutor.name {
+                            targets.push(*card)
+                        }
+                    }
+                }
+            },
+            CardType::Planeswalker => {
+                if tutor.contains(Keys::With, CardFields::Keys){
+                    targets.append(&mut restrictions(deck, tutor, sdeck, CardType::Planeswalker));
+                } else {
+                    for card in &sdeck.planeswalkers {
+                        if card.name != tutor.name {
+                            targets.push(*card)
+                        }
+                    }
+                }
+            },
+            CardType::Basic => (),
+            CardType::Land(subtype) => {
+                match subtype {
+                    Some(subtypes) => {
+                        for card in &deck.library {
+                            for types in &card.cardtype {
+                                match types {
+                                    CardType::Land(subs) => {
+                                        match subs {
+                                            Some(subs) => {
+                                                if subs == subtypes {
+                                                    targets.push(card);
+                                                } else {
+                                                    for subtype in subtypes {
+                                                        for sub in subs {
+                                                            if sub == subtype {
+                                                                targets.push(&card);
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            },
+                                            None => (),
+                                        }
+                                    },
+                                    _ => (),
+                                }
+                            }
+                        }    
+                    },
+                    None => {
+                        for card in &sdeck.lands {
+                            if card.name != tutor.name && !tutor.contains(CardType::Basic, CardFields::OracleType){
+                                targets.push(*card);
+                            } else if card.name != tutor.name && tutor.contains(CardType::Basic, CardFields::OracleType) { 
+                                if card.contains(CardType::Basic, CardFields::CardType) {
+                                    targets.push(*card);
+                                }
+                            }    
+                        }
+                    },
+                }
+            },
+            CardType::Card => (),
+            _ => (),
+        }
+        targets
+    }
+    fn restrictions<'deck>(deck: &'deck Deck, tutor: &Card, sdeck: &mut basic::Cardtype<'deck>, cardtype: CardType) -> Vec<&'deck Card> {
+        let mut result: Vec<&Card> = Vec::new();
+        if tutor.contains(Keywords::Transmute, CardFields::Keywords){
+            for card in &deck.library {
+                if card.cmc == tutor.cmc {
+                    result.push(&card);
+                }
+            }
+        }else if tutor.contains(Restrictions::Cmc, CardFields::Restrictions)
+        || tutor.contains(Restrictions::ManaValue, CardFields::Restrictions) 
+        || tutor.contains(Restrictions::ManaCost, CardFields::Restrictions) {
+            if !(tutor.contains(Restrictions::Plus, CardFields::Restrictions) 
+            || tutor.contains(String::from("X"), CardFields::ManaCost)){
+                if tutor.contains(Restrictions::Less, CardFields::Restrictions) 
+                && !tutor.contains(Restrictions::Equal, CardFields::Restrictions) {
+                   result.append(&mut less(deck, tutor, cardtype));
+
+                }else if !tutor.contains(Restrictions::Less, CardFields::Restrictions) 
+                && tutor.contains(Restrictions::Equal, CardFields::Restrictions) {
+                   result.append(&mut equal(deck, tutor, cardtype)); 
+
+                }else if tutor.contains(Restrictions::Less, CardFields::Restrictions) 
+                && tutor.contains(Restrictions::Equal, CardFields::Restrictions) {
+                    result.append(&mut less_or_equal(deck, tutor, cardtype));
+                }  
+            } else {
+                match cardtype {        
+                    CardType::Artifact(_) => {
+                        for card in &sdeck.artifacts {
+                            if card.name != tutor.name {
+                                result.push(*card);
+                            }
+                        }
+                    },
+                    CardType::Creature(_) => {
+                        for card in &sdeck.creatures {
+                            if card.name != tutor.name {
+                                result.push(*card);
+                            }
+                        }},
+                    CardType::Enchantment(_) => {
+                        for card in &sdeck.enchantments {
+                            if card.name != tutor.name {
+                                result.push(*card);
+                            }
+                        }},
+                    CardType::Instant(_) => {
+                        for card in &sdeck.instants {
+                            if card.name != tutor.name {
+                                result.push(*card);
+                            }
+                        }},
+                    CardType::Sorcery(_)=> {
+                        for card in &sdeck.sorcerys {
+                            if card.name != tutor.name {
+                                result.push(*card);
+                            }
+                        }},
+                    CardType::Planeswalker => {
+                        for card in &sdeck.planeswalkers {
+                            if card.name != tutor.name {
+                                result.push(*card);
+                            }
+                        }}, 
+                    _ => (),
+                }   
+            }  
+        }else if tutor.contains(Keys::Power, CardFields::Keys) {
+            if tutor.contains(Restrictions::Less, CardFields::Restrictions) 
+            && !tutor.contains(Restrictions::Equal, CardFields::Restrictions) {
+                result.append(&mut less(deck, tutor, cardtype)); 
+
+            }else if !tutor.contains(Restrictions::Less, CardFields::Restrictions) 
+            && tutor.contains(Restrictions::Equal, CardFields::Restrictions) {
+                result.append(&mut equal(deck,tutor,cardtype));
+
+            }else if tutor.contains(Restrictions::Less, CardFields::Restrictions) 
+            && tutor.contains(Restrictions::Equal, CardFields::Restrictions) {
+                result.append(&mut less_or_equal(deck,tutor,cardtype)); 
+            }
+       
+        } else if tutor.contains(Keys::Toughness, CardFields::Keys){
+            if tutor.contains(Restrictions::Less, CardFields::Restrictions) 
+            && !tutor.contains(Restrictions::Equal, CardFields::Restrictions) {
+                result.append(&mut less(deck, tutor, cardtype)); 
+
+            }else if !tutor.contains(Restrictions::Less, CardFields::Restrictions) 
+            && tutor.contains(Restrictions::Equal, CardFields::Restrictions) {
+                result.append(&mut equal(deck, tutor, cardtype)); 
+
+            }else if tutor.contains(Restrictions::Less, CardFields::Restrictions) 
+            && tutor.contains(Restrictions::Equal, CardFields::Restrictions) {
+                result.append(&mut less_or_equal(deck,tutor,cardtype)); 
+            }
+        }
+        
+        result
+    }
+    fn less<'deck>(deck: &'deck Deck, tutor: &Card, cardtype: CardType) -> Vec<&'deck Card> {
+        let mut result: Vec<&Card> = Vec::new();
+        match &tutor.restrictions {
+            Some(restrictions) => {
+                for restriciton in restrictions {
+                    match restriciton {
+                        Restrictions::OneStr => {
+                            for card in &deck.library {
+                                if card.name != tutor.name {
+                                    if card.cmc < 1.0 && card.contains(&cardtype, CardFields::CardType){
+                                        result.push(&card);
+                                    }
+                                }
+                            }
+                        },
+                        Restrictions::TwoStr => {
+                            for card in &deck.library {
+                                if card.name != tutor.name {
+                                    if card.cmc < 2.0 && card.contains(&cardtype, CardFields::CardType){
+                                        result.push(&card);
+                                    }
+                                }
+                            }
+                        },
+                        Restrictions::ThreeStr => {
+                            for card in &deck.library {
+                                if card.name != tutor.name {
+                                    if card.cmc < 3.0 && card.contains(&cardtype, CardFields::CardType){
+                                        result.push(&card);
+                                    }
+                                }
+                            }
+                        },
+                        Restrictions::Zero => (),
+                        Restrictions::One => {
+                            for card in &deck.library {
+                                if card.name != tutor.name {
+                                    if card.cmc < 1.0 && card.contains(&cardtype, CardFields::CardType){
+                                        result.push(&card);
+                                    }
+                                }
+                            }
+                        },
+                        Restrictions::Two => {
+                            for card in &deck.library {
+                                if card.name != tutor.name {
+                                    if card.cmc < 2.0 && card.contains(&cardtype, CardFields::CardType){
+                                        result.push(&card);
+                                    }
+                                }
+                            }
+                        },
+                        Restrictions::Three => {
+                            for card in &deck.library {
+                                if card.name != tutor.name {
+                                    if card.cmc < 3.0 && card.contains(&cardtype, CardFields::CardType){
+                                        result.push(&card);
+                                    }
+                                }
+                            }
+                        },
+                        Restrictions::Four => {
+                            for card in &deck.library {
+                                if card.name != tutor.name {
+                                    if card.cmc < 4.0 && card.contains(&cardtype, CardFields::CardType){
+                                        result.push(&card);
+                                    }
+                                }
+                            }
+                        },
+                        Restrictions::Five => {
+                            for card in &deck.library {
+                                if card.name != tutor.name {
+                                    if card.cmc < 5.0 && card.contains(&cardtype, CardFields::CardType){
+                                        result.push(&card);
+                                    }
+                                }
+                            }
+                        },
+                        Restrictions::Six => {
+                            for card in &deck.library {
+                                if card.name != tutor.name {
+                                    if card.cmc < 6.0 && card.contains(&cardtype, CardFields::CardType){
+                                        result.push(&card);
+                                    }
+                                }
+                            }
+                        },
+                        Restrictions::Seven => {
+                            for card in &deck.library {
+                                if card.name != tutor.name {
+                                    if card.cmc < 7.0 && card.contains(&cardtype, CardFields::CardType){
+                                        result.push(&card);
+                                    }
+                                }
+                            }
+                        },
+                        Restrictions::Eight => {
+                            for card in &deck.library {
+                                if card.name != tutor.name {
+                                    if card.cmc < 8.0 && card.contains(&cardtype, CardFields::CardType){
+                                        result.push(&card);
+                                    }
+                                }
+                            }
+                        },
+                        Restrictions::Nine => {for card in &deck.library {
+                            if card.name != tutor.name {
+                                if card.cmc < 9.0 && card.contains(&cardtype, CardFields::CardType){
+                                    result.push(&card);
+                                }
+                            }
+                        }},
+                        Restrictions::Ten => {
+                            for card in &deck.library {
+                                if card.name != tutor.name {
+                                    if card.cmc < 10.0 && card.contains(&cardtype, CardFields::CardType){
+                                        result.push(&card);
+                                    }
+                                }
+                            }
+                        },
+                        Restrictions::Eleven => {
+                            for card in &deck.library {
+                                if card.name != tutor.name {
+                                    if card.cmc < 11.0 && card.contains(&cardtype, CardFields::CardType){
+                                        result.push(&card);
+                                    }
+                                }
+                            }
+                        },
+                        Restrictions::Twelve => {
+                            for card in &deck.library {
+                                if card.name != tutor.name {
+                                    if card.cmc < 12.0 && card.contains(&cardtype, CardFields::CardType){
+                                        result.push(&card);
+                                    }
+                                }
+                            }
+                        },
+                        _ => (),
+                    }
+                }
+            },
+            None => (),
+        }
+        result
+    }
+    fn equal<'deck>(deck: &'deck Deck, tutor: &Card, cardtype: CardType) -> Vec<&'deck Card>{
+        let mut result: Vec<&Card> = Vec::new();
+        match &tutor.restrictions {
+            Some(restrictions) => {
+                for restriciton in restrictions {
+                    match restriciton {
+                        Restrictions::OneStr => {
+                            for card in &deck.library {
+                                if card.name != tutor.name {
+                                    if card.cmc == 1.0 && card.contains(&cardtype, CardFields::CardType){
+                                        result.push(&card);
+                                    }
+                                }
+                            }
+                        },
+                        Restrictions::TwoStr => {
+                            for card in &deck.library {
+                                if card.name != tutor.name {
+                                    if card.cmc == 2.0 && card.contains(&cardtype, CardFields::CardType){
+                                        result.push(&card);
+                                    }
+                                }
+                            }
+                        },
+                        Restrictions::ThreeStr => {
+                            for card in &deck.library {
+                                if card.name != tutor.name {
+                                    if card.cmc == 3.0 && card.contains(&cardtype, CardFields::CardType){
+                                        result.push(&card);
+                                    }
+                                }
+                            }
+                        },
+                        Restrictions::Zero => {
+                            for card in &deck.library {
+                                if card.name != tutor.name {
+                                    if card.cmc == 0.0 && card.contains(&cardtype, CardFields::CardType){
+                                        result.push(&card);
+                                    }
+                                }
+                            }
+                        },
+                        Restrictions::One => {
+                            for card in &deck.library {
+                                if card.name != tutor.name {
+                                    if card.cmc == 1.0 && card.contains(&cardtype, CardFields::CardType){
+                                        result.push(&card);
+                                    }
+                                }
+                            }
+                        },
+                        Restrictions::Two => {
+                            for card in &deck.library {
+                                if card.name != tutor.name {
+                                    if card.cmc == 2.0 && card.contains(&cardtype, CardFields::CardType){
+                                        result.push(&card);
+                                    }
+                                }
+                            }
+                        },
+                        Restrictions::Three => {
+                            for card in &deck.library {
+                                if card.name != tutor.name {
+                                    if card.cmc == 3.0 && card.contains(&cardtype, CardFields::CardType){
+                                        result.push(&card);
+                                    }
+                                }
+                            }
+                        },
+                        Restrictions::Four => {
+                            for card in &deck.library {
+                                if card.name != tutor.name {
+                                    if card.cmc == 4.0 && card.contains(&cardtype, CardFields::CardType){
+                                        result.push(&card);
+                                    }
+                                }
+                            }
+                        },
+                        Restrictions::Five => {
+                            for card in &deck.library {
+                                if card.name != tutor.name {
+                                    if card.cmc == 5.0 && card.contains(&cardtype, CardFields::CardType){
+                                        result.push(&card);
+                                    }
+                                }
+                            }
+                        },
+                        Restrictions::Six => {
+                            for card in &deck.library {
+                                if card.name != tutor.name {
+                                    if card.cmc == 6.0 && card.contains(&cardtype, CardFields::CardType){
+                                        result.push(&card);
+                                    }
+                                }
+                            }
+                        },
+                        Restrictions::Seven => {
+                            for card in &deck.library {
+                                if card.name != tutor.name {
+                                    if card.cmc == 7.0 && card.contains(&cardtype, CardFields::CardType){
+                                        result.push(&card);
+                                    }
+                                }
+                            }
+                        },
+                        Restrictions::Eight => {
+                            for card in &deck.library {
+                                if card.name != tutor.name {
+                                    if card.cmc == 8.0 && card.contains(&cardtype, CardFields::CardType){
+                                        result.push(&card);
+                                    }
+                                }
+                            }
+                        },
+                        Restrictions::Nine => {for card in &deck.library {
+                            if card.name != tutor.name {
+                                if card.cmc == 9.0 && card.contains(&cardtype, CardFields::CardType){
+                                    result.push(&card);
+                                }
+                            }
+                        }},
+                        Restrictions::Ten => {
+                            for card in &deck.library {
+                                if card.name != tutor.name {
+                                    if card.cmc == 10.0 && card.contains(&cardtype, CardFields::CardType){
+                                        result.push(&card);
+                                    }
+                                }
+                            }
+                        },
+                        Restrictions::Eleven => {
+                            for card in &deck.library {
+                                if card.name != tutor.name {
+                                    if card.cmc == 11.0 && card.contains(&cardtype, CardFields::CardType){
+                                        result.push(&card);
+                                    }
+                                }
+                            }
+                        },
+                        Restrictions::Twelve => {
+                            for card in &deck.library {
+                                if card.name != tutor.name {
+                                    if card.cmc == 12.0 && card.contains(&cardtype, CardFields::CardType){
+                                        result.push(&card);
+                                    }
+                                }
+                            }
+                        },
+                        _ => (),
+                    }
+                }
+            },
+            None => (),
+        }
+        result
+    }
+    fn less_or_equal<'deck>(deck: &'deck Deck, tutor: &Card, cardtype: CardType) -> Vec<&'deck Card> {
+        let mut result: Vec<&Card> = Vec::new();
+        match &tutor.restrictions {
+            Some(restrictions) => {
+                for restriciton in restrictions {
+                    match restriciton {
+                        Restrictions::OneStr => {
+                            for card in &deck.library {
+                                if card.name != tutor.name {
+                                    if card.cmc <= 1.0 && card.contains(&cardtype, CardFields::CardType){
+                                        result.push(&card);
+                                    }
+                                }
+                            }
+                        },
+                        Restrictions::TwoStr => {
+                            for card in &deck.library {
+                                if card.name != tutor.name {
+                                    if card.cmc <= 2.0 && card.contains(&cardtype, CardFields::CardType){
+                                        result.push(&card);
+                                    }
+                                }
+                            }
+                        },
+                        Restrictions::ThreeStr => {
+                            for card in &deck.library {
+                                if card.name != tutor.name {
+                                    if card.cmc <= 3.0 && card.contains(&cardtype, CardFields::CardType){
+                                        result.push(&card);
+                                    }
+                                }
+                            }
+                        },
+                        Restrictions::Zero => {
+                            for card in &deck.library {
+                                if card.name != tutor.name {
+                                    if card.cmc == 0.0 {
+                                        result.push(&card);
+                                    }
+                                }
+                            }
+                        },
+                        Restrictions::One => {
+                            for card in &deck.library {
+                                if card.name != tutor.name && card.contains(&cardtype, CardFields::CardType){
+                                    if card.cmc <= 1.0 {
+                                        result.push(&card);
+                                    }
+                                }
+                            }
+                        },
+                        Restrictions::Two => {
+                            for card in &deck.library {
+                                if card.name != tutor.name && card.contains(&cardtype, CardFields::CardType){
+                                    if card.cmc <= 2.0 {
+                                        result.push(&card);
+                                    }
+                                }
+                            }
+                        },
+                        Restrictions::Three => {
+                            for card in &deck.library {
+                                if card.name != tutor.name && card.contains(&cardtype, CardFields::CardType){
+                                    if card.cmc <= 3.0 {
+                                        result.push(&card);
+                                    }
+                                }
+                            }
+                        },
+                        Restrictions::Four => {
+                            for card in &deck.library {
+                                if card.name != tutor.name && card.contains(&cardtype, CardFields::CardType){
+                                    if card.cmc <= 4.0 {
+                                        result.push(&card);
+                                    }
+                                }
+                            }
+                        },
+                        Restrictions::Five => {
+                            for card in &deck.library {
+                                if card.name != tutor.name && card.contains(&cardtype, CardFields::CardType){
+                                    if card.cmc <= 5.0 {
+                                        result.push(&card);
+                                    }
+                                }
+                            }
+                        },
+                        Restrictions::Six => {
+                            for card in &deck.library {
+                                if card.name != tutor.name {
+                                    if card.cmc <= 6.0 && card.contains(&cardtype, CardFields::CardType){
+                                        result.push(&card);
+                                    }
+                                }
+                            }
+                        },
+                        Restrictions::Seven => {
+                            for card in &deck.library {
+                                if card.name != tutor.name {
+                                    if card.cmc <= 7.0 && card.contains(&cardtype, CardFields::CardType){
+                                        result.push(&card);
+                                    }
+                                }
+                            }
+                        },
+                        Restrictions::Eight => {
+                            for card in &deck.library {
+                                if card.name != tutor.name {
+                                    if card.cmc <= 8.0 && card.contains(&cardtype, CardFields::CardType){
+                                        result.push(&card);
+                                    }
+                                }
+                            }
+                        },
+                        Restrictions::Nine => {for card in &deck.library {
+                            if card.name != tutor.name {
+                                if card.cmc <= 9.0 && card.contains(&cardtype, CardFields::CardType){
+                                    result.push(&card);
+                                }
+                            }
+                        }},
+                        Restrictions::Ten => {
+                            for card in &deck.library {
+                                if card.name != tutor.name {
+                                    if card.cmc <= 10.0 && card.contains(&cardtype, CardFields::CardType){
+                                        result.push(&card);
+                                    }
+                                }
+                            }
+                        },
+                        Restrictions::Eleven => {
+                            for card in &deck.library {
+                                if card.name != tutor.name {
+                                    if card.cmc <= 11.0 && card.contains(&cardtype, CardFields::CardType){
+                                        result.push(&card);
+                                    }
+                                }
+                            }
+                        },
+                        Restrictions::Twelve => {
+                            for card in &deck.library {
+                                if card.name != tutor.name {
+                                    if card.cmc <= 12.0 && card.contains(&cardtype, CardFields::CardType){
+                                        result.push(&card);
+                                    }
+                                }
+                            }
+                        },
+                        _ => (),
+                    }
+                }
+            },
+            None => (),
+        }
+        result
+    }
+}
+
 pub mod powerlevel {}
