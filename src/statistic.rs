@@ -55,6 +55,7 @@ pub mod basic {
         pub recursion: Vec<&'deck Card>,
         pub reanimation: Vec<&'deck Card>,
         pub stax: Vec<&'deck Card>,
+        pub fastmana: Vec<&'deck Card>,
         
     }
    // TODO: add fast mana and rituals 
@@ -222,6 +223,7 @@ pub mod basic {
         let mut recursion: Vec<&Card> = Vec::new();
         let mut reanimation: Vec<&Card> = Vec::new();
         let mut stax: Vec<&Card> = Vec::new();
+        let mut fastmana: Vec<&Card> = Vec::new();
 
         for card in &deck.library {
             match &card.backside {
@@ -256,6 +258,9 @@ pub mod basic {
                     if is_stax(&backside) {
                         stax.push(&backside);
                     } 
+                    if is_fastmana(&backside) {
+                        fastmana.push(&backside)
+                    }
                 },
                 None => (),
             }
@@ -289,8 +294,11 @@ pub mod basic {
             if is_stax(card) {
                 stax.push(card);
             }
+            if is_fastmana(card) {
+                fastmana.push(card);
+            }
         }
-        return Effect{draw, bounce, removal, boardwipe, lord, counter, payoff, recursion, reanimation, stax};
+        return Effect{draw, bounce, removal, boardwipe, lord, counter, payoff, recursion, reanimation, stax, fastmana};
     }
     fn is_draw(card: &Card) -> bool {
         if (( (card.contains(Keys::Draw, CardFields::Keys) && !card.contains(Restrictions::CanT, CardFields::Restrictions) )
@@ -457,6 +465,24 @@ pub mod basic {
                 return true;
             }
             return false;
+    }
+    fn is_fastmana(card: &Card) -> bool {
+        if (( card.contains(Keys::Sacrifice, CardFields::Keys) 
+                && card.contains(&card.name, CardFields::OracleText) 
+                && !card.contains(Keys::Search, CardFields::Keys)
+                && !card.contains(CardType::Land(None), CardFields::CardType) )
+            || ( (card.contains(CardType::Instant(None), CardFields::CardType) 
+                    && !card.contains(Keys::Return, CardFields::Keys))
+                || card.contains(CardType::Sorcery(None), CardFields::CardType) 
+                || (card.contains(CardType::Creature(None), CardFields::CardType) 
+                && !card.contains(Keys::Tap, CardFields::Keys) )))
+        && (card.contains(Keys::Add, CardFields::Keys) || card.contains(ArtifactSubtype::Treasure, CardFields::OracleText) )
+        && !card.contains(Keys::Additional, CardFields::Keys){  
+            return true;
+        } else {
+            return false;
+        }
+
     }
 }
 

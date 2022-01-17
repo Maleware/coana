@@ -186,7 +186,11 @@ fn main() {
                 println!("\nStax:");
                 for stax in basics.effect.stax {
                     println!("{}", stax.name);
-                } 
+                }
+                println!("\nFast Mana:");
+                for fastmana in basics.effect.fastmana {
+                    println!("{}", fastmana.name);
+                }
                 println!("Tutorlinking: \n"); 
                 for (tutor,link) in tutors {
                     println!("\n Targets for {} : \n", &tutor);
