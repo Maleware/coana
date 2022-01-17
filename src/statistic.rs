@@ -205,7 +205,8 @@ pub mod basic {
             if card.contains(Keys::Untap, CardFields::Keys) 
             && card.contains(Restrictions::Target, CardFields::Restrictions)
             && card.contains(CardType::Land(None), CardFields::OracleType) 
-            && !card.contains(CardType::Planeswalker, CardFields::CardType){
+            && !card.contains(CardType::Planeswalker, CardFields::CardType)
+            && !card.contains(CardType::Instant(None), CardFields::CardType){
                 dorks.push(card);
             }
             // Needed to get the mana reduction artifacts and effects
