@@ -351,7 +351,7 @@ pub mod basic {
         || card.contains(Restrictions::All, CardFields::Restrictions) 
         || card.contains(Restrictions::Every, CardFields::Restrictions) ) 
         && (card.contains(Keys::Destroy, CardFields::Keys)
-            || (card.contains(Keys::Exile, CardFields::Keys) && !card.contains(&*card.name, CardFields::OracleText ) && !card.contains(Keys::Return, CardFields::Keys) ) 
+            || (card.contains(Keys::Exile, CardFields::Keys) && !card.contains(&*card.name, CardFields::OracleText ) && !card.contains(Keys::Return, CardFields::Keys) && !card.contains(Keys::Cast, CardFields::Keys)) 
             || ( card.contains(Keys::Return, CardFields::Keys) && !card.contains(Keys::Exile, CardFields::Keys) )
             || card.contains(Restrictions::MinusXX, CardFields::Restrictions) ) 
         && !card.contains(Keywords::Overload, CardFields::Keywords) 
@@ -386,9 +386,9 @@ pub mod basic {
         }
     } 
     fn is_counter(card: &Card) -> bool {
-        if( (card.contains(Keys::Counter, CardFields::Keys) && !card.contains(Restrictions::CanT, CardFields::Restrictions))
+        if( (card.contains(Keys::Counter, CardFields::Keys) && !card.contains(Restrictions::CanT, CardFields::Restrictions) && !card.contains(Keys::Put, CardFields::Keys))
         && card.contains(Restrictions::Target, CardFields::Restrictions)
-        && card.contains(Keys::Spell, CardFields::Keys))
+        && card.contains(Keys::Spell, CardFields::Keys) )
         || (card.contains(Keys::Redirect, CardFields::Keys) && !card.contains(CardType::Artifact(None), CardFields::CardType) && !card.contains(Keywords::Storm, CardFields::Keywords)){
             return true;
         } else {
@@ -461,7 +461,8 @@ pub mod basic {
             || card.contains(CardType::Enchantment(None), CardFields::CardType)
             || card.contains(CardType::Planeswalker, CardFields::CardType))
         && !card.contains(Keys::Add, CardFields::Keys)
-        && !card.contains(Keys::ETB, CardFields::Keys){
+        && !card.contains(Keys::ETB, CardFields::Keys)
+        && !card.contains(&card.name, CardFields::OracleText){
                 return true;
             }
             return false;
@@ -477,7 +478,8 @@ pub mod basic {
                 || (card.contains(CardType::Creature(None), CardFields::CardType) 
                 && !card.contains(Keys::Tap, CardFields::Keys) )))
         && (card.contains(Keys::Add, CardFields::Keys) || card.contains(ArtifactSubtype::Treasure, CardFields::OracleText) )
-        && !card.contains(Keys::Additional, CardFields::Keys){  
+        && !card.contains(Keys::Additional, CardFields::Keys)
+        && !card.contains(Keywords::Retrace, CardFields::Keywords) {  
             return true;
         } else {
             return false;
@@ -504,6 +506,7 @@ pub mod tutor {
             if card.contains(Keys::Search, CardFields::Keys) 
             && !card.contains(Keys::Opponent, CardFields::Keys)
             && !card.contains(Restrictions::CanT, CardFields::Restrictions)
+            && !card.contains(String::from("Research"), CardFields::OracleText)
             // Tutor can force you to sacrifce a permanent of the chosen type. Diabolic intent and Arcum Dagson force you to sacrice a creature to find a another type 
             && card.name != String::from("Diabolic Intent") {
                 let mut buffer: Vec<&Card> = Vec::new();

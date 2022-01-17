@@ -159,7 +159,7 @@ fn main() {
                 for removal in basics.effect.removal {
                     println!("{}", removal.name);
                 }  
-                println!("\nBoardqipe:");
+                println!("\nBoardwipe:");
                 for boardwipe in basics.effect.boardwipe {
                     println!("{}", boardwipe.name);
                 } 
