@@ -224,7 +224,7 @@ pub mod basic {
         let mut reanimation: Vec<&Card> = Vec::new();
         let mut stax: Vec<&Card> = Vec::new();
         let mut fastmana: Vec<&Card> = Vec::new();
-
+      
         for card in &deck.library {
             match &card.backside {
                 Some(backside) => {
@@ -487,7 +487,7 @@ pub mod basic {
 
     }
 }
-
+ 
 pub mod r#abstract {}
 
 pub mod tutor {
@@ -510,7 +510,7 @@ pub mod tutor {
             // Tutor can force you to sacrifce a permanent of the chosen type. Diabolic intent and Arcum Dagson force you to sacrice a creature to find a another type 
             && card.name != String::from("Diabolic Intent") {
                 let mut buffer: Vec<&Card> = Vec::new();
-                // only links if oracle text contains card type. For Subtypes tutors, Cardtype is not namend on tutor.
+       
                 match &card.oracle_types {
                     Some(types) => {
                         for typ in types {
@@ -521,7 +521,27 @@ pub mod tutor {
                 }
                 tutor.insert(&card.name, buffer);
             }
-        } 
+        }
+        
+        for card in &deck.commander {
+            if card.contains(Keys::Search, CardFields::Keys) 
+            && !card.contains(Keys::Opponent, CardFields::Keys)
+            && !card.contains(Restrictions::CanT, CardFields::Restrictions)
+            && !card.contains(String::from("Research"), CardFields::OracleText) {
+                let mut buffer: Vec<&Card> = Vec::new();
+       
+                match &card.oracle_types {
+                    Some(types) => {
+                        for typ in types {
+                           buffer.append(&mut link_target(&card, &deck, &mut sdeck, typ)); 
+                        }
+                    },
+                    None => (),
+                }
+                tutor.insert(&card.name, buffer);
+            } 
+        }
+        
         tutor
     }
     fn link_target<'deck>(tutor: &Card, deck: &'deck Deck, sdeck: &mut basic::Cardtype<'deck>, typ: &CardType) -> Vec<&'deck Card> {
@@ -555,7 +575,8 @@ pub mod tutor {
                     || tutor.contains(Keys::Token, CardFields::Keys) 
                     || tutor.contains(Keywords::Convoke, CardFields::Keywords)
                     || tutor.contains(Keys::Counter, CardFields::Keys)
-                    || (tutor.contains(Restrictions::All, CardFields::Restrictions) && tutor.contains(Zones::Graveyard, CardFields::Zones) ))
+                    || (tutor.contains(Restrictions::All, CardFields::Restrictions) && tutor.contains(Zones::Graveyard, CardFields::Zones) )
+                    || tutor.contains(Restrictions::Whenever, CardFields::Restrictions,) && tutor.contains(Keys::Cast, CardFields::Keys))
                     && tutor.name != String::from("Arcum Dagsson"){
 
                         match color_restrictions(sdeck, tutor, typ) {
