@@ -517,12 +517,13 @@ pub mod tutor {
             CardType::Creature(_) => {
                 if tutor.contains(Keys::With, CardFields::Keys)
                 && !((tutor.contains(Keys::Exile, CardFields::Keys) && !tutor.contains(&tutor.name, CardFields::OracleText))
-                    || tutor.contains(Keys::Token, CardFields::Keys)) {
+                    || tutor.contains(Keys::Token, CardFields::Keys)) { 
                     targets.append(&mut restrictions(deck, tutor, sdeck, CardType::Creature(None)));
                 } else {
                     if !(tutor.contains(Keys::Exile, CardFields::Keys) 
                     || tutor.contains(Keys::Token, CardFields::Keys) 
-                    || tutor.contains(Keywords::Convoke, CardFields::Keywords))
+                    || tutor.contains(Keywords::Convoke, CardFields::Keywords)
+                    || (tutor.contains(Restrictions::All, CardFields::Restrictions) && tutor.contains(Zones::Graveyard, CardFields::Zones) ))
                     && tutor.name != String::from("Arcum Dagsson"){
 
                         match color_restrictions(sdeck, tutor, typ) {
@@ -652,7 +653,8 @@ pub mod tutor {
             },
             CardType::Card => {
                 if !(tutor.contains(CardType::Artifact(None), CardFields::OracleType)
-                || tutor.contains(CardType::Creature(None), CardFields::OracleType)
+                || ( tutor.contains(CardType::Creature(None), CardFields::OracleType) 
+                    && !(tutor.contains(Restrictions::All, CardFields::Restrictions) && tutor.contains(Zones::Graveyard, CardFields::Zones) ) )
                 || tutor.contains(CardType::Enchantment(None), CardFields::OracleType)
                 || tutor.contains(CardType::Instant(None), CardFields::OracleType)
                 || tutor.contains(CardType::Sorcery(None), CardFields::OracleType)
@@ -769,6 +771,24 @@ pub mod tutor {
     }
     fn restrictions<'deck>(deck: &'deck Deck, tutor: &Card, sdeck: &mut basic::Cardtype<'deck>, cardtype: CardType) -> Vec<&'deck Card> {
         let mut result: Vec<&Card> = Vec::new();
+        // there are tutors who search keywords like flash but are not further restricted. So return restriction if found for keywords
+        for keyword in Keywords::iter() {
+            if tutor.contains(keyword, CardFields::OracleText) {
+                for card in &deck.library {
+                    match &card.keywords {
+                        Some(cardkeywords) => {
+                            for cardkeyword in cardkeywords {
+                                if cardkeyword == &keyword && card.name != tutor.name {
+                                    result.push(card);
+                                }
+                            }
+                        },
+                        None => (),
+                    }
+                }
+            }
+        }
+
         if tutor.contains(Keywords::Transmute, CardFields::Keywords){
             for card in &deck.library {
                 if card.cmc == tutor.cmc && card.name != tutor.name{
@@ -883,6 +903,43 @@ pub mod tutor {
             && tutor.contains(Restrictions::Equal, CardFields::Restrictions) )
             || tutor.contains(Restrictions::OrLess, CardFields::Restrictions)  {
                 result.append(&mut less_or_equal(deck,tutor,cardtype)); 
+            }
+            // tutor can contain instant and card with flash, so through restriction it will end up here
+            // flash is linked in the keyword for loop and then will fall through all if's and end up in else where all
+            // instants will be linked to it
+        } else {
+            match cardtype {
+                CardType::Artifact(_) => {
+                    for card in &sdeck.artifacts {
+                        result.push(*card);
+                    }
+                },
+                CardType::Creature(_) => {
+                    for card in &sdeck.creatures {
+                        result.push(*card);
+                    } 
+                },
+                CardType::Instant(_) => {
+                    for card in &sdeck.instants {
+                        result.push(*card);
+                    }
+                },
+                CardType::Sorcery(_) => {
+                    for card in &sdeck.sorcerys {
+                        result.push(*card);
+                    }
+                },
+                CardType::Planeswalker => {
+                    for card in &sdeck.planeswalkers {
+                        result.push(*card);
+                    }
+                },
+                CardType::Enchantment(_) => {
+                    for card in &sdeck.enchantments {
+                        result.push(*card);
+                    }
+                },
+                _ => (),
             }
         }
         
