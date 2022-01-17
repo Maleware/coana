@@ -658,7 +658,9 @@ pub mod tutor {
                 || tutor.contains(CardType::Sorcery(None), CardFields::OracleType)
                 || ( tutor.contains(CardType::Land(None), CardFields::OracleType) 
                     && !tutor.contains(Restrictions::Control, CardFields::Restrictions) )
-                || tutor.contains(CardType::Planeswalker, CardFields::OracleType) ) {
+                || tutor.contains(CardType::Planeswalker, CardFields::OracleType) )
+                // Very special tutor. Got a lot of text and can't be passed through existing rules
+                || tutor.name == String::from("Scrapyard Recombiner")  {
                     for card in &deck.library {    
                         if tutor.contains(Keys::NonLegendary, CardFields::Keys) {
                             if !card.legendary && card.name != tutor.name{
@@ -669,33 +671,73 @@ pub mod tutor {
                             if card.legendary && card.name != tutor.name{
                                 targets.push(card);
                             }
-                        }else {
-                            // TODO: Bug e.g. tutor Dragon target: Creature["Elder", "Dragon"] can not match. Need to match any subtype from target against target.
-                            // therefore match typ to Subtype categroy, then match every Subtype item in card with the to search subtype
+                        }else { 
                             for sub in ArtifactSubtype::iter() {
                                 if tutor.contains(&sub, CardFields::OracleText) {
                                    for typ in &card.cardtype {
-                                        if *typ == CardType::Artifact(Some(vec![sub])) && card.name != tutor.name {
-                                            targets.push(card);
-                                        }
+                                    match &typ {
+                                        &CardType::Artifact(artifact) => {
+                                            match artifact{
+                                                Some(subtypes) => {
+                                                    for subtype in subtypes {
+                                                        if subtype == &sub {
+                                                            if card.name != tutor.name {
+                                                                targets.push(card);
+                                                            }
+                                                        }
+                                                    }
+                                                },
+                                                None => (),
+                                            }
+                                        },
+                                        _ => (),
+                                    }
                                    } 
                                 }
                             }
                             for sub in CreatureSubtype::iter() {
                                 if tutor.contains(&sub, CardFields::OracleText) && !tutor.contains(Keywords::Suspend, CardFields::Keywords){
                                     for typ in &card.cardtype {
-                                         if *typ == CardType::Creature(Some(vec![sub])) && card.name != tutor.name{
-                                             targets.push(card);
-                                         }
+                                        match &typ {
+                                            &CardType::Creature(creature) => {
+                                                match creature{
+                                                    Some(subtypes) => {
+                                                        for subtype in subtypes {
+                                                            if subtype == &sub {
+                                                                if card.name != tutor.name {
+                                                                    targets.push(card);
+                                                                }
+                                                            }
+                                                        }
+                                                    },
+                                                    None => (),
+                                                }
+                                            },
+                                            _ => (),
+                                        } 
                                     } 
                                  }
                             }
                             for sub in EnchantmentSubtype::iter() {
                                 if tutor.contains(&sub, CardFields::OracleText) {
                                     for typ in &card.cardtype {
-                                         if *typ == CardType::Enchantment(Some(vec![sub])) && card.name != tutor.name{
-                                             targets.push(card);
-                                         }
+                                        match &typ {
+                                            &CardType::Enchantment(enchantment) => {
+                                                match enchantment {
+                                                    Some(subtypes) => {
+                                                        for subtype in subtypes {
+                                                            if subtype == &sub {
+                                                                if card.name != tutor.name {
+                                                                    targets.push(card);
+                                                                }
+                                                            }
+                                                        }
+                                                    },
+                                                    None => (),
+                                                }
+                                            },
+                                            _ => (),
+                                        }
                                     } 
                                  }
                             }
@@ -1313,7 +1355,7 @@ pub mod tutor {
         result
     }
     fn color_restrictions<'deck>(sdeck: &mut basic::Cardtype<'deck>, tutor: &Card ,cardtype: &CardType) -> Option<Vec<&'deck Card>> {
-        println!("Called color restricitons for: {}", tutor.name);
+       
         let mut targets: Vec<&Card> = Vec::new();
         let mut sorted_deck: &Vec<&Card> = &Vec::new();
 
@@ -1360,7 +1402,6 @@ pub mod tutor {
                             }
                         },
                         Keys::SGreen => {
-                            println!("Color restriction for: {}", tutor.name);
                             for card in sorted_deck  {
                                 if card.name != tutor.name && card.contains(Colors::Green, CardFields::ManaCost) {
                                     targets.push(*card)
