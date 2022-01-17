@@ -529,14 +529,14 @@ pub mod tutor {
 
         match typ {
             CardType::Artifact(_) => {
-                if tutor.contains(Keys::With, CardFields::Keys){
+                if tutor.contains(Keys::With, CardFields::Keys) && !tutor.contains(Keys::Investigate, CardFields::Keys){
                     targets.append(&mut restrictions(deck, tutor, sdeck, CardType::Artifact(None)));
                 } else {
                     match color_restrictions(sdeck, tutor, typ) {
                         Some(mut result) => {targets.append(&mut result)},
                         None => {
                             for card in &sdeck.artifacts {
-                                if card.name != tutor.name {
+                                if card.name != tutor.name && !tutor.contains(Keys::Investigate, CardFields::Keys){
                                     targets.push(*card)
                                 }
                             }
@@ -647,12 +647,12 @@ pub mod tutor {
                                     CardType::Land(subs) => {
                                         match subs {
                                             Some(subs) => {
-                                                if subs == subtypes {
+                                                if subs == subtypes && !tutor.contains(Keys::Investigate, CardFields::Keys){
                                                     targets.push(card);
                                                 } else {
                                                     for subtype in subtypes {
                                                         for sub in subs {
-                                                            if sub == subtype {
+                                                            if sub == subtype && !tutor.contains(Keys::Investigate, CardFields::Keys) {
                                                                 targets.push(&card);
                                                             }
                                                         }
@@ -684,7 +684,8 @@ pub mod tutor {
                 }
             },
             CardType::Card => {
-                if !(tutor.contains(CardType::Artifact(None), CardFields::OracleType)
+                if !( ( tutor.contains(CardType::Artifact(None), CardFields::OracleType) 
+                    &&!tutor.contains(Keys::Investigate, CardFields::Keys) )
                 || ( tutor.contains(CardType::Creature(None), CardFields::OracleType) 
                     && !(tutor.contains(Restrictions::All, CardFields::Restrictions) 
                     && tutor.contains(Zones::Graveyard, CardFields::Zones) ) )
@@ -692,10 +693,11 @@ pub mod tutor {
                 || tutor.contains(CardType::Instant(None), CardFields::OracleType)
                 || tutor.contains(CardType::Sorcery(None), CardFields::OracleType)
                 || ( tutor.contains(CardType::Land(None), CardFields::OracleType) 
-                    && !tutor.contains(Restrictions::Control, CardFields::Restrictions) )
+                    && !tutor.contains(Restrictions::Control, CardFields::Restrictions) 
+                    && !tutor.contains(Keys::Investigate, CardFields::Keys) )
                 || tutor.contains(CardType::Planeswalker, CardFields::OracleType) )
                 // Very special tutor. Got a lot of text and can't be passed through existing rules
-                || tutor.name == String::from("Scrapyard Recombiner")  {
+                || tutor.name == String::from("Scrapyard Recombiner") {
                     for card in &deck.library {    
                         if tutor.contains(Keys::NonLegendary, CardFields::Keys) {
                             if !card.legendary && card.name != tutor.name{
