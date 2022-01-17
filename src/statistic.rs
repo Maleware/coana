@@ -194,7 +194,8 @@ pub mod basic {
             }
             if card.contains(Keys::Untap, CardFields::Keys) 
             && card.contains(Restrictions::Target, CardFields::Restrictions)
-            && card.contains(CardType::Land(None), CardFields::OracleType) {
+            && card.contains(CardType::Land(None), CardFields::OracleType) 
+            && !card.contains(CardType::Planeswalker, CardFields::CardType){
                 dorks.push(card);
             }
             // Needed to get the mana reduction artifacts and effects
@@ -520,7 +521,8 @@ pub mod tutor {
                     targets.append(&mut restrictions(deck, tutor, sdeck, CardType::Creature(None)));
                 } else {
                     if !(tutor.contains(Keys::Exile, CardFields::Keys) 
-                    || tutor.contains(Keys::Token, CardFields::Keys) )
+                    || tutor.contains(Keys::Token, CardFields::Keys) 
+                    || tutor.contains(Keywords::Convoke, CardFields::Keywords))
                     && tutor.name != String::from("Arcum Dagsson"){
 
                         match color_restrictions(sdeck, tutor, typ) {
