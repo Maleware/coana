@@ -58,7 +58,7 @@ pub mod basic {
         pub fastmana: Vec<&'deck Card>,
         
     }
-   // TODO: add fast mana and rituals 
+
     pub fn cardtype<'deck> (deck: &'deck Deck) -> Cardtype<'deck> {
         let mut creatures = Vec::new();
         let mut enchantments = Vec::new();
@@ -800,6 +800,7 @@ pub mod tutor {
     fn restrictions<'deck>(deck: &'deck Deck, tutor: &Card, sdeck: &mut basic::Cardtype<'deck>, cardtype: CardType) -> Vec<&'deck Card> {
         let mut result: Vec<&Card> = Vec::new();
         // there are tutors who search keywords like flash but are not further restricted. So return restriction if found for keywords
+        
         for keyword in Keywords::iter() {
             if tutor.contains(keyword, CardFields::OracleText) {
                 for card in &deck.library {
@@ -816,7 +817,7 @@ pub mod tutor {
                 }
             }
         }
-
+        
         if tutor.contains(Keywords::Transmute, CardFields::Keywords){
             for card in &deck.library {
                 if card.cmc == tutor.cmc && card.name != tutor.name{
@@ -936,41 +937,42 @@ pub mod tutor {
             // flash is linked in the keyword for loop and then will fall through all if's and end up in else where all
             // instants will be linked to it
         } else {
-            match cardtype {
-                CardType::Artifact(_) => {
-                    for card in &sdeck.artifacts {
-                        result.push(*card);
-                    }
-                },
-                CardType::Creature(_) => {
-                    for card in &sdeck.creatures {
-                        result.push(*card);
-                    } 
-                },
-                CardType::Instant(_) => {
-                    for card in &sdeck.instants {
-                        result.push(*card);
-                    }
-                },
-                CardType::Sorcery(_) => {
-                    for card in &sdeck.sorcerys {
-                        result.push(*card);
-                    }
-                },
-                CardType::Planeswalker => {
-                    for card in &sdeck.planeswalkers {
-                        result.push(*card);
-                    }
-                },
-                CardType::Enchantment(_) => {
-                    for card in &sdeck.enchantments {
-                        result.push(*card);
-                    }
-                },
-                _ => (),
+            if tutor.name != String::from("Scrapyard Recombiner") {  
+                match cardtype {
+                    CardType::Artifact(_) => {
+                        for card in &sdeck.artifacts {
+                            result.push(*card);
+                        }
+                    },
+                    CardType::Creature(_) => {
+                        for card in &sdeck.creatures {
+                            result.push(*card);
+                        } 
+                    },
+                    CardType::Instant(_) => {
+                        for card in &sdeck.instants {
+                            result.push(*card);
+                        }
+                    },
+                    CardType::Sorcery(_) => {
+                        for card in &sdeck.sorcerys {
+                            result.push(*card);
+                        }
+                    },
+                    CardType::Planeswalker => {
+                        for card in &sdeck.planeswalkers {
+                            result.push(*card);
+                        }
+                    },
+                    CardType::Enchantment(_) => {
+                        for card in &sdeck.enchantments {
+                            result.push(*card);
+                        }
+                    },
+                    _ => (),
+                }
             }
         }
-        
         result
     }
     fn less<'deck>(deck: &'deck Deck, tutor: &Card, cardtype: CardType) -> Vec<&'deck Card> {
