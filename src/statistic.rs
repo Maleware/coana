@@ -115,7 +115,16 @@ pub mod basic {
         let mut enchantments: Vec<&Card> = Vec::new();
         let mut lands: Vec<&Card> = Vec::new();
 
+        let mut libcom: Vec<&Card> = Vec::new();
+        
         for card in &deck.library {
+            libcom.push(card)
+        }
+        for card in &deck.commander {
+            libcom.push(card)
+        }
+
+        for card in libcom {
             for color in Colors::iter() {
                 if card.contains(&color, CardFields::ManaCost){
                     // Pips per card, colored mana requirement
@@ -298,6 +307,81 @@ pub mod basic {
                 fastmana.push(card);
             }
         }
+
+        for card in &deck.commander {
+            match &card.backside {
+                Some(backside) => {
+                    if is_draw(&backside){
+                        draw.push(&backside);
+                    }
+                    if is_removal(&backside){ 
+                        removal.push(&backside);
+                    }
+                    if is_counter(&backside){
+                        counter.push(&backside);
+                    }
+                    if  is_bounce(&backside){
+                        bounce.push(&backside);
+                    }
+                    if is_recursion(&backside) {
+                        recursion.push(&backside);
+                    } 
+                    if is_reanimation(&backside) {
+                        reanimation.push(&backside); 
+                    }
+                    if is_boardwipe(&backside){
+                        boardwipe.push(&backside);
+                    }
+                    if is_payoff(&backside) { 
+                        payoff.push(&backside);
+                    }
+                    if is_lord(&backside) { 
+                        lord.push(&backside);
+                    }
+                    if is_stax(&backside) {
+                        stax.push(&backside);
+                    } 
+                    if is_fastmana(&backside) {
+                        fastmana.push(&backside)
+                    }
+                },
+                None => (),
+            }
+            if is_draw(card){
+                draw.push(card);
+            }
+            if is_removal(card){ 
+                removal.push(card);
+            }
+            if is_counter(card){
+                counter.push(card);
+            }
+            if  is_bounce(card){
+                bounce.push(card);
+            }
+            if is_recursion(card) {
+                recursion.push(card);
+            } 
+            if is_reanimation(card) {
+                reanimation.push(card); 
+            }
+            if is_boardwipe(card){
+                boardwipe.push(card);
+            }
+            if is_payoff(card) { 
+                payoff.push(card);
+            }
+            if is_lord(card) { 
+                lord.push(card);
+            }
+            if is_stax(card) {
+                stax.push(card);
+            }
+            if is_fastmana(card) {
+                fastmana.push(card);
+            } 
+        }
+
         return Effect{draw, bounce, removal, boardwipe, lord, counter, payoff, recursion, reanimation, stax, fastmana};
     }
     fn is_draw(card: &Card) -> bool {
