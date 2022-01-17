@@ -544,12 +544,14 @@ pub mod tutor {
             CardType::Creature(_) => {
                 if tutor.contains(Keys::With, CardFields::Keys)
                 && !((tutor.contains(Keys::Exile, CardFields::Keys) && !tutor.contains(&tutor.name, CardFields::OracleText))
-                    || tutor.contains(Keys::Token, CardFields::Keys)) { 
+                    || tutor.contains(Keys::Token, CardFields::Keys)
+                    || tutor.contains(Keys::Counter, CardFields::Keys)) { 
                     targets.append(&mut restrictions(deck, tutor, sdeck, CardType::Creature(None)));
                 } else {
                     if !(tutor.contains(Keys::Exile, CardFields::Keys) 
                     || tutor.contains(Keys::Token, CardFields::Keys) 
                     || tutor.contains(Keywords::Convoke, CardFields::Keywords)
+                    || tutor.contains(Keys::Counter, CardFields::Keys)
                     || (tutor.contains(Restrictions::All, CardFields::Restrictions) && tutor.contains(Zones::Graveyard, CardFields::Zones) ))
                     && tutor.name != String::from("Arcum Dagsson"){
 
