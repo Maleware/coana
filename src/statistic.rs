@@ -417,7 +417,8 @@ pub mod basic {
         && ( card.contains(Zones::Graveyard, CardFields::Zones) && !card.contains(Restrictions::Drawstep, CardFields::Restrictions)) 
         && ( ( card.contains(Zones::Hand, CardFields::Zones) && !card.contains(Restrictions::Reveal, CardFields::Restrictions)) 
             || (card.contains(Zones::Library, CardFields::Zones) && card.contains(Keys::Top, CardFields::Keys)))
-        && !card.contains(Keys::Counter, CardFields::Keys){
+        && !card.contains(Keys::Counter, CardFields::Keys)
+        && !card.contains(Keys::Surveil, CardFields::Keys){
             return true;
         } else {
             return false;
@@ -654,7 +655,8 @@ pub mod tutor {
             CardType::Card => {
                 if !(tutor.contains(CardType::Artifact(None), CardFields::OracleType)
                 || ( tutor.contains(CardType::Creature(None), CardFields::OracleType) 
-                    && !(tutor.contains(Restrictions::All, CardFields::Restrictions) && tutor.contains(Zones::Graveyard, CardFields::Zones) ) )
+                    && !(tutor.contains(Restrictions::All, CardFields::Restrictions) 
+                    && tutor.contains(Zones::Graveyard, CardFields::Zones) ) )
                 || tutor.contains(CardType::Enchantment(None), CardFields::OracleType)
                 || tutor.contains(CardType::Instant(None), CardFields::OracleType)
                 || tutor.contains(CardType::Sorcery(None), CardFields::OracleType)
