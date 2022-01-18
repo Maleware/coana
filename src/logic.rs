@@ -147,7 +147,7 @@ pub mod card_build {
     use crate::types::*;
 
 
-    pub fn build(v: &serde_json::Value, commander: bool, mdfc: Option<&serde_json::Value>) -> Card {
+    pub fn build(v: &serde_json::Value, commander: bool, mdfc: Option<serde_json::Value>) -> Card {
         
         Card{
             cmc: cmc(v["cmc"].to_string()),
@@ -246,9 +246,9 @@ pub mod card_build {
         }
 
     }
-    fn backside(input: Option<&serde_json::Value>) -> Option<Box<Card>> {
+    fn backside(input: Option<serde_json::Value>) -> Option<Box<Card>> {
         match input {
-            Some(t) => {return Some(Box::new(build(t, false , None))); },
+            Some(t) => {return Some(Box::new(build(&t, false , None))); },
             None => None,
         }
     }

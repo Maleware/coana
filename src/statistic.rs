@@ -1601,9 +1601,11 @@ pub mod tutor {
                                 }
                             }
                         },
+                        // Dryad arbor is a Creatur - Forest Dryad, therefore it's green but not mentioned on the card.
                         Keys::SGreen => {
                             for card in sorted_deck  {
-                                if card.name != tutor.name && card.contains(Colors::Green, CardFields::ManaCost) {
+                                if (card.name != tutor.name && card.contains(Colors::Green, CardFields::ManaCost) )
+                                || card.name == String::from("Dryad Arbor"){
                                     targets.push(*card)
                                 }
                             }

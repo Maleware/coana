@@ -889,14 +889,15 @@ impl Card {
         // card will contain backside From here we can just pass through to build and backside: Box<card_build::build(v["backside"], commander)>
         match serde_json::from_str(&card) {
             Ok(t) => {
-                let v: Value = t;
-                let mut mdfc: Option<&serde_json::Value> = None;
+                let mut v: Value = t;
+                let mut mdfc: Option<serde_json::Value> = None;
 
                 if v["layout"] == "modal_dfc".to_string()
                 || v["layout"] == "transform".to_string()
                 || v["layout"] == "split".to_string()
                 || v["type_line"].to_string().contains("//"){
-                    mdfc = Some(&v["card_faces"][1]);
+                    mdfc = Some(v["card_faces"][1].clone());
+                    v = v["card_faces"][0].clone();
                 }
  
                 //Check if card was found
