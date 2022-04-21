@@ -6,7 +6,7 @@ pub mod basic {
     use std::{collections::{BTreeMap, HashMap}};
     use crate::types::Colors;
     use strum::IntoEnumIterator;
-    
+
     #[derive(Debug)]
     pub struct Basic<'deck> {
         pub cardtype: Cardtype<'deck>,
@@ -106,6 +106,7 @@ pub mod basic {
 
         mana_cost 
     }
+    // TODO: refracture 
     pub fn mana_distribution(deck: &Deck) -> ManaDist{
         
         let mut manacost: HashMap<Colors, u8> = HashMap::new();
@@ -214,9 +215,14 @@ pub mod basic {
             && card.contains(Restrictions::Less, CardFields::Restrictions) 
             && card.contains(Keys::Cast, CardFields::Keys) 
             && card.contains(Keys::Spell, CardFields::Keys)
-            && !card.contains(Zones::Battlefield, CardFields::Zones)  
+            && !(card.contains(Zones::Battlefield, CardFields::Zones)  && !card.contains(Keys::ETB, CardFields::Keys) ) 
+            && card.name != String::from("The Great Henge")
             {
-                artifacts.push(card);
+                if card.contains(CardType::Artifact(None), CardFields::CardType){
+                    artifacts.push(card);
+                } else {
+                    dorks.push(card);
+                }
             }
         }
         return ManaDist{ manacost, manaprod, dorks, artifacts, enchantments, lands };        
@@ -390,6 +396,8 @@ pub mod basic {
         && (!card.contains(Restrictions::Drawstep, CardFields::Restrictions ) && !card.contains(Restrictions::After, CardFields::Restrictions) ) 
         && (!card.contains(Keys::Exile, CardFields::Keys) && !card.contains(Restrictions::Instead, CardFields::Restrictions))   )
         // Impulsive draw: Exile top card of your library 
+        
+        
         || ( card.contains(Keys::Exile, CardFields::Keys) 
             && card.contains(Keys::Top, CardFields::Keys) 
             && card.contains(CardType::Card, CardFields::OracleType) 
@@ -564,7 +572,8 @@ pub mod basic {
                 && !card.contains(Keys::Tap, CardFields::Keys) )))
         && (card.contains(Keys::Add, CardFields::Keys) || card.contains(ArtifactSubtype::Treasure, CardFields::OracleText) )
         && !card.contains(Keys::Additional, CardFields::Keys)
-        && !card.contains(Keywords::Retrace, CardFields::Keywords) {  
+        && !card.contains(Keywords::Retrace, CardFields::Keywords) 
+        && !card.contains(Keys::Draw, CardFields::Keys){  
             return true;
         } else {
             return false;
@@ -573,7 +582,28 @@ pub mod basic {
     }
 }
  
-pub mod r#abstract {}
+pub mod archetype {
+    #[derive(Debug)]
+    pub enum Archetype {
+        Flicker,
+        Storm,
+        Enchantments,
+        Pod, //Birthing Pod evolution decks
+        LandsMatter,
+        Wheel,
+        Lifegain,
+        Mill,
+        Tokens,
+        Voltron,
+        Counters, //+1/+1 counter or any other sort of putting counter on stuff
+        SuperFriends,
+        Aristocrats,
+        Artifacts,
+        Tribal, // Human, Treefolk etc.
+    }
+
+    
+}
 
 pub mod tutor {
     use std::{collections::HashMap};
@@ -593,7 +623,8 @@ pub mod tutor {
             && !card.contains(Restrictions::CanT, CardFields::Restrictions)
             && !card.contains(String::from("Research"), CardFields::OracleText)
             // Tutor can force you to sacrifce a permanent of the chosen type. Diabolic intent and Arcum Dagson force you to sacrice a creature to find a another type 
-            && card.name != String::from("Diabolic Intent") {
+            // && card.name != String::from("Diabolic Intent") 
+            && card.name != String::from("Search for Azcanta"){
                 let mut buffer: Vec<&Card> = Vec::new();
        
                 match &card.oracle_types {
@@ -662,7 +693,8 @@ pub mod tutor {
                     || tutor.contains(Keys::Counter, CardFields::Keys)
                     || (tutor.contains(Restrictions::All, CardFields::Restrictions) && tutor.contains(Zones::Graveyard, CardFields::Zones) )
                     || tutor.contains(Restrictions::Whenever, CardFields::Restrictions,) && tutor.contains(Keys::Cast, CardFields::Keys))
-                    && tutor.name != String::from("Arcum Dagsson"){
+                    && tutor.name != String::from("Arcum Dagsson")
+                    && tutor.name != String::from("Diabolic Intent"){
 
                         match color_restrictions(sdeck, tutor, typ) {
                             Some(mut result) => {targets.append(&mut result)},
@@ -803,7 +835,9 @@ pub mod tutor {
                     && !tutor.contains(Keys::Investigate, CardFields::Keys) )
                 || tutor.contains(CardType::Planeswalker, CardFields::OracleType) )
                 // Very special tutor. Got a lot of text and can't be passed through existing rules
-                || tutor.name == String::from("Scrapyard Recombiner") {
+                || tutor.name == String::from("Scrapyard Recombiner")
+                // Falls somewhere through a rule, TODO: make it passing above rules 
+                || tutor.name == String::from("Diabolic Intent"){
                     for card in &deck.library {    
                         if tutor.contains(Keys::NonLegendary, CardFields::Keys) {
                             if !card.legendary && card.name != tutor.name{
