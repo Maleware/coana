@@ -600,6 +600,7 @@ pub mod archetype {
         Aristocrats,
         Artifacts,
         Tribal, // Human, Treefolk etc.
+        Reanimator,
     }
 
     
