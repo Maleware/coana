@@ -185,9 +185,62 @@ pub mod combo {
     use crate::types::{CEResult, CEerror, Deck};
     use serde_json::Value;
     use std::{fs::{self, *}, io::{prelude::*, BufReader}, time::{SystemTime, Duration}, ops::Add};
+   
+    pub fn search (deck: Deck) -> CEResult<()> { Ok(()) }
+    
+    pub fn load() -> CEResult<Vec<String>> {
+        let mut contents = String::new();
 
-    pub fn update() -> CEResult<()> { Ok(()) }
-    pub fn get() -> CEResult<()> { 
+        println!("Open combo data from system");
+
+        match File::open("combo.txt") {
+            Ok(t) => {
+                let mut buf_reader = BufReader::new(t);
+                buf_reader.read_to_string(&mut contents).expect("Can not open combo data");
+
+                let result: Vec<String> = serde_json::from_str(&contents).expect("Json not properly build"); 
+
+                println!("Combo data successfully opened"); 
+
+                Ok(result) 
+            },
+            Err(_) => Err(CEerror::ComboError),
+        }
+    }
+
+    pub fn update() -> CEResult<()>{
+
+        match File::open("combo.txt") {
+            Ok(_) => {
+                let metadata = fs::metadata("combo.txt").expect("File found but can not open");
+                let now = SystemTime::now();
+                
+                if let Ok(time) = metadata.modified() {
+                    // Update every full day
+                    if time.add(Duration::from_secs(86400)) <= now {
+                        println!("File is older than a day: Update....");
+                        match remove_file("combo.txt"){
+                            Ok(_) => println!("Expired combo data removed..."),
+                            Err(_) => println!("Can not remove old combo data..."),
+                        }
+                        match serde_json::to_writer(&File::create("combo.txt").expect("Can not save combos"), &get()?) {
+                            Ok(_)=> return Ok(()),
+                            Err(_) => return Err(CEerror::ComboError),
+                        } 
+                    }   
+                }   
+                Ok(())
+            },
+            Err(_) => {
+                println!("combo.txt not found, create and download data");
+                match serde_json::to_writer(&File::create("combo.txt").expect("Can not save combos"), &get()?) {
+                    Ok(_)=> return Ok(()),
+                    Err(_) => return Err(CEerror::ComboError),
+                }
+            },
+        }
+    }
+    fn get() -> CEResult<Vec<Vec<String>>> { 
         let mut result = Vec::new();
 
         match request_combo() {
@@ -200,22 +253,17 @@ pub mod combo {
                                         .collect::<Vec<String>>();
                             // empty slots are length one
                             if elements.len() != 1 {
-
                                 result.push(elements);
                             } 
                 }
 
-                for combo in result {
-                    println!("{:?}", &combo);
-                }
-
-                return Ok(());
+                return Ok(result);
             },
             Err(_) => return Err(CEerror::ComboError),
         }
 
-        Ok(()) }
-    pub fn search (deck: Deck) -> CEResult<()> { Ok(()) }
+    }
+   
     fn request_combo() -> CEResult<String> {
 
         println!("Fetching available Combos...");

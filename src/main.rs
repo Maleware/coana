@@ -73,9 +73,9 @@ fn main() {
 
     // update routine to load or check neccessary data
     check_database(offline, verbose);
-    match import::combo::get() {
-        Ok(t) => println!("combo downloaded"),
-        Err(e) => println!("{}", e),
+    match import::combo::update() {
+        Ok(_) => println!("Database up to date"),
+        Err(e) => println!("{}", e),  
     }
 
     if register {
