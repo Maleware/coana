@@ -95,6 +95,12 @@ fn main() {
                 let basics = basic::Basic::new(&t);
                 let tutors = tutor::tutor(&t);
                 println!("Basic Statistics: ");
+
+                println!("\n Detected combos({}):", &basics.combo.len());
+                for combo in &basics.combo {
+                    println!("{:?}", *combo);
+                }
+
                 println!("\nCreatures: {}", basics.cardtype.creatures.len());
                 for item in basics.cardtype.creatures {
                     println!("{}", item.name);
