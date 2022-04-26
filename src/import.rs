@@ -152,7 +152,7 @@ pub mod scryfall {
                 Ok(t) => {
                     let v: Value = serde_json::from_str(&t).expect("Bulk-data frame was not retrieved");
                     if v["code"] == "not_found".to_string() {
-                        println!("Bulk-Data temporally not available");
+                        println!("Bulk-Data temporally not available, due to not recieving data frame");
                     }
                     api = v["data"][0]["download_uri"].to_string().replace("\"", "");
                     
@@ -219,8 +219,7 @@ pub mod combo {
             // Empty slots have been cutted in request_combo()
             let num_pieces = 10 - (15 - combo.len());
             let mut hit: usize = 0;
-            let mut commander_combo_piece: bool = false;
-            //println!("Looking at combo:\n {:?}\n", &combo);
+            let mut commander_combo_piece: bool = false; 
             // starts at 1 because 0 is number of combo initiated by source
             for i in 1..(num_pieces+1) {    
                 // looking through deck to fetch all available combos, take only combos which are completed therefor hit == num_pieces
@@ -238,15 +237,13 @@ pub mod combo {
             }
             // Clone is not so pretty, but database is just constructed during lifetime here and goes out of scope once iteration is done.
             // Can't come up with something better yet
-            if hit == num_pieces {
-                print!("\nCombo found: {:?}\n", &combo);
+            if hit == num_pieces { 
                 results.push(ComboResult::from(commander_combo_piece, combo.clone(), num_pieces))
                 }
         }
 
         Ok(results) 
-    }
-    
+    } 
     fn load() -> CEResult<Vec<Vec<String>>> {
         let mut contents = String::new();
 
@@ -266,7 +263,6 @@ pub mod combo {
             Err(_) => Err(CEerror::ComboError),
         }
     }
-
     pub fn update() -> CEResult<()>{
 
         match File::open("combo.txt") {
@@ -277,7 +273,7 @@ pub mod combo {
                 if let Ok(time) = metadata.modified() {
                     // Update every full week
                     if time.add(Duration::from_secs(7*86400)) <= now {
-                        println!("File is older than a day: Update....");
+                        println!("File is older than a week: Update....");
                         match remove_file("combo.txt"){
                             Ok(_) => println!("Expired combo data removed..."),
                             Err(_) => println!("Can not remove old combo data..."),

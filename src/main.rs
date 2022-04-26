@@ -13,11 +13,14 @@ pub fn check_database(offline: bool, verbose: bool) {
     if !offline {
         println_verbose!(verbose, "Online - Mode active, checking on updates");
         database::update();
-        // import::combo::update().expect("Can not find or download combo");
+        match import::combo::update() {
+            Ok(_) => println!("Combo-Database up to date"),
+            Err(e) => println!("{}", e),  
+        }
     } else {
         println_verbose!(verbose, "Offline - Mode active, checking on data correct and existing.");
         logic::database::load().expect("Can not load databases, fatal in offline modus");
-        // import::combo::load().expect("Can not load combo data, fatal in offline modus");
+        
     }
 }
 pub fn check_deck (offline: bool, verbose: bool, input: String) -> CEResult<Deck> {
@@ -73,10 +76,7 @@ fn main() {
 
     // update routine to load or check neccessary data
     check_database(offline, verbose);
-    match import::combo::update() {
-        Ok(_) => println!("Database up to date"),
-        Err(e) => println!("{}", e),  
-    }
+    
 
     if register {
         match load_register(offline, verbose, input.to_string()) {

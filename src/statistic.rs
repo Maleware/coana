@@ -618,6 +618,7 @@ pub mod tutor {
     pub fn tutor<'deck>(deck: &'deck Deck) -> HashMap<&'deck String, Vec<&'deck Card>> {
         let mut tutor: HashMap<&'deck String, Vec<&'deck Card>> = HashMap::new();
 
+        //TODO: Just not pretty because combos get constructed twice. Need of doing it differently here, maybe pass through the sorted deck
         let mut sdeck = basic::Basic::new(&deck).cardtype;
 
         for card in &deck.library {           
