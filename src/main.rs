@@ -73,7 +73,11 @@ fn main() {
 
     // update routine to load or check neccessary data
     check_database(offline, verbose);
-   
+    match import::combo::get() {
+        Ok(t) => println!("combo downloaded"),
+        Err(e) => println!("{}", e),
+    }
+
     if register {
         match load_register(offline, verbose, input.to_string()) {
             Ok(t) => {

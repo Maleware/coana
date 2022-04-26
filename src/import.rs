@@ -177,6 +177,89 @@ pub mod scryfall {
     }
 }
 /********************************** Combo Import ******************************************/
+
+/* This is a new combo import, Website: https://sheets.googleapis.com/v4/spreadsheets/1KqyDRZRCgy8YgMFnY0tHSw_3jC99Z0zFvJrPbfm66vA/values:batchGet?ranges=combos!A2:Q&key=AIzaSyBD_rcme5Ff37Evxa4eW5BFQZkmTbgpHew */
+
+pub mod combo {
+    use reqwest::blocking;
+    use crate::types::{CEResult, CEerror, Deck};
+    use serde_json::Value;
+    use std::{fs::{self, *}, io::{prelude::*, BufReader}, time::{SystemTime, Duration}, ops::Add};
+
+    pub fn update() -> CEResult<()> { Ok(()) }
+    pub fn get() -> CEResult<()> { 
+        let mut result = Vec::new();
+
+        match request_combo() {
+            Ok(combodata) => {
+                let buffer = seperate_combos(combo_to_json(&combodata)); 
+                
+                for item in buffer {
+                    let elements = item.split("\",\"")
+                                        .flat_map(str::parse::<String>)
+                                        .collect::<Vec<String>>();
+                            // empty slots are length one
+                            if elements.len() != 1 {
+
+                                result.push(elements);
+                            } 
+                }
+
+                for combo in result {
+                    println!("{:?}", &combo);
+                }
+
+                return Ok(());
+            },
+            Err(_) => return Err(CEerror::ComboError),
+        }
+
+        Ok(()) }
+    pub fn search (deck: Deck) -> CEResult<()> { Ok(()) }
+    fn request_combo() -> CEResult<String> {
+
+        println!("Fetching available Combos...");
+
+        let api = String::from("https://sheets.googleapis.com/v4/spreadsheets/1KqyDRZRCgy8YgMFnY0tHSw_3jC99Z0zFvJrPbfm66vA/values:batchGet?ranges=combos!A2:Q&key=AIzaSyBD_rcme5Ff37Evxa4eW5BFQZkmTbgpHew");
+
+        let request = match
+            blocking::get(api) {
+                Ok(t) => match t.text() {
+                    Ok(t) => Ok(t),
+                    Err(_) => Err(CEerror::ComboError),
+                },
+                Err(_) => Err(CEerror::ComboError),
+        };
+        request
+    }
+    fn combo_to_json(request: &String) -> CEResult<Value> {
+
+        match serde_json::from_str(request) {
+            Ok(t) => Ok(t),
+            Err(_) => Err(CEerror::ComboError),
+        }
+    }
+    fn seperate_combos(json: CEResult<Value>) -> Vec<String> {
+
+        let mut vec = Vec::new();
+
+        match json {
+            Ok(t) =>{
+                vec = t["valueRanges"][0]["values"]
+                    .to_string()
+                    .trim()
+                    .replace(",\"\"", "")
+                    .split(",[")
+                    .flat_map(str::parse::<String>)
+                    .collect::<Vec<String>>();
+            },
+            Err(e) => println!("{}", e),
+        }
+        vec
+    } 
+
+}
+
 /*
 
 Not Avialable anymore... 01 / 03 / 22
