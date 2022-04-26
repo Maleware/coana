@@ -2,7 +2,7 @@
 
 
 pub mod basic {
-    use crate::types::*;
+    use crate::{types::*, import::{self, combo::ComboResult}};
     use std::{collections::{BTreeMap, HashMap}};
     use crate::types::Colors;
     use strum::IntoEnumIterator;
@@ -13,6 +13,7 @@ pub mod basic {
         pub mana_cost: BTreeMap<u8, Vec<&'deck Card>>,
         pub mana_dist: ManaDist<'deck>,
         pub effect: Effect<'deck>,
+        pub combo: Vec<ComboResult>,
     }
     impl <'deck> Basic<'deck> {
         pub fn new(deck: &Deck) -> Basic {
@@ -21,6 +22,7 @@ pub mod basic {
                 mana_cost: mana_cost(deck),
                 mana_dist: mana_distribution(deck),
                 effect: effect(deck),
+                combo: import::combo::search(deck).expect("unable to build combo"),
             }
         }
     }
@@ -581,7 +583,7 @@ pub mod basic {
 
     }
 }
- 
+/*  
 pub mod archetype {
     #[derive(Debug)]
     pub enum Archetype {
@@ -601,11 +603,11 @@ pub mod archetype {
         Artifacts,
         Tribal, // Human, Treefolk etc.
         Reanimator,
+        Toolbox,
     }
-
     
 }
-
+*/
 pub mod tutor {
     use std::{collections::HashMap};
     use strum::IntoEnumIterator;

@@ -178,17 +178,76 @@ pub mod scryfall {
 }
 /********************************** Combo Import ******************************************/
 
-/* This is a new combo import, Website: https://sheets.googleapis.com/v4/spreadsheets/1KqyDRZRCgy8YgMFnY0tHSw_3jC99Z0zFvJrPbfm66vA/values:batchGet?ranges=combos!A2:Q&key=AIzaSyBD_rcme5Ff37Evxa4eW5BFQZkmTbgpHew */
+/* This is a new combo import, API: https://sheets.googleapis.com/v4/spreadsheets/1KqyDRZRCgy8YgMFnY0tHSw_3jC99Z0zFvJrPbfm66vA/values:batchGet?ranges=combos!A2:Q&key=AIzaSyBD_rcme5Ff37Evxa4eW5BFQZkmTbgpHew */
 
 pub mod combo {
     use reqwest::blocking;
-    use crate::types::{CEResult, CEerror, Deck};
+    use crate::{types::{CEResult, CEerror, Deck}};
     use serde_json::Value;
     use std::{fs::{self, *}, io::{prelude::*, BufReader}, time::{SystemTime, Duration}, ops::Add};
    
-    pub fn search (deck: Deck) -> CEResult<()> { Ok(()) }
+    #[derive(Debug)]
+    pub struct ComboResult {
+        commander_combo_piece: bool,
+        combo: Vec<String>,
+        num_pieces: usize,
+    }
+
+    impl ComboResult {
+        pub fn new() -> ComboResult {
+            ComboResult {
+                commander_combo_piece: false,
+                combo: Vec::new(),
+                num_pieces: 0,
+            }
+        }
+        pub fn from(commander_combo_piece: bool, combo: Vec<String>, num_pieces: usize) -> ComboResult {
+            ComboResult { 
+                commander_combo_piece: commander_combo_piece, 
+                combo: combo, 
+                num_pieces: num_pieces }
+        }
+    }
+
+    pub fn search (deck: &Deck) -> CEResult<Vec<ComboResult>> { 
+        
+        let database = load()?;
+        let mut results: Vec<ComboResult> = Vec::new();
+        
+        for combo in &database { 
+            // All available slots are 15, 10 are reserved for combo pieces, therefore 10 - (15-vec.len()) = num combopieces 
+            // Empty slots have been cutted in request_combo()
+            let num_pieces = 10 - (15 - combo.len());
+            let mut hit: usize = 0;
+            let mut commander_combo_piece: bool = false;
+            //println!("Looking at combo:\n {:?}\n", &combo);
+            // starts at 1 because 0 is number of combo initiated by source
+            for i in 1..(num_pieces+1) {    
+                // looking through deck to fetch all available combos, take only combos which are completed therefor hit == num_pieces
+                for card in &deck.library {
+                    if card.name == *combo[i].replace("\"", "") {
+                        hit += 1;
+                    } 
+                }
+                for commander in &deck.commander {
+                    if commander.name == *combo[i].replace("\"", "") {
+                        hit += 1;
+                        commander_combo_piece = true;
+                    }
+                }  
+            }
+            // Clone is not so pretty, but database is just constructed during lifetime here and goes out of scope once iteration is done.
+            // Can't come up with something better yet
+            if hit == num_pieces {
+                print!("\nCombo found: {:?}\n", &combo);
+                results.push(ComboResult::from(commander_combo_piece, combo.clone(), num_pieces))
+                }
+        }
+
+        Ok(results) 
+    }
     
-    pub fn load() -> CEResult<Vec<String>> {
+    fn load() -> CEResult<Vec<Vec<String>>> {
         let mut contents = String::new();
 
         println!("Open combo data from system");
@@ -198,7 +257,7 @@ pub mod combo {
                 let mut buf_reader = BufReader::new(t);
                 buf_reader.read_to_string(&mut contents).expect("Can not open combo data");
 
-                let result: Vec<String> = serde_json::from_str(&contents).expect("Json not properly build"); 
+                let result: Vec<Vec<String>> = serde_json::from_str(&contents).expect("Json not properly build"); 
 
                 println!("Combo data successfully opened"); 
 
@@ -216,8 +275,8 @@ pub mod combo {
                 let now = SystemTime::now();
                 
                 if let Ok(time) = metadata.modified() {
-                    // Update every full day
-                    if time.add(Duration::from_secs(86400)) <= now {
+                    // Update every full week
+                    if time.add(Duration::from_secs(7*86400)) <= now {
                         println!("File is older than a day: Update....");
                         match remove_file("combo.txt"){
                             Ok(_) => println!("Expired combo data removed..."),
@@ -262,8 +321,7 @@ pub mod combo {
             Err(_) => return Err(CEerror::ComboError),
         }
 
-    }
-   
+    }   
     fn request_combo() -> CEResult<String> {
 
         println!("Fetching available Combos...");
