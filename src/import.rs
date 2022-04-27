@@ -217,10 +217,9 @@ pub mod combo {
         let empty = String::from("");
 
         for combo in &database { 
-            // All available slots are 15, 10 are reserved for combo pieces, therefore 10 - (15-vec.len()) = num combopieces 
-            // Empty slots have been cutted in request_combo()
+   
     
-
+            // Unused combo slots in data frame are empty, therefore a maximum of 10 slots minus empty ones is num_pieces
             let mut unused = 0;
             for elements in combo {
                 if *elements == empty { unused += 1 }
@@ -354,7 +353,6 @@ pub mod combo {
     fn seperate_combos(json: CEResult<Value>) -> Vec<String> {
 
         let mut vec = Vec::new();
-        let empty = String::from("\"\"");
 
         match json {       
             Ok(t) =>{
