@@ -180,6 +180,7 @@ pub mod scryfall {
 
 /* This is a new combo import, API: https://sheets.googleapis.com/v4/spreadsheets/1KqyDRZRCgy8YgMFnY0tHSw_3jC99Z0zFvJrPbfm66vA/values:batchGet?ranges=combos!A2:Q&key=AIzaSyBD_rcme5Ff37Evxa4eW5BFQZkmTbgpHew */
 
+// Sadly database inconsistent concerning length of dataframe, a different method to figure out number of combopieces is needed
 pub mod combo {
     use reqwest::blocking;
     use crate::{types::{CEResult, CEerror, Deck}};
@@ -212,24 +213,33 @@ pub mod combo {
     pub fn search (deck: &Deck) -> CEResult<Vec<ComboResult>> { 
         
         let database = load()?;
-        let mut results: Vec<ComboResult> = Vec::new();
-        
+        let mut results: Vec<ComboResult> = Vec::new(); 
+        let empty = String::from("");
+
         for combo in &database { 
             // All available slots are 15, 10 are reserved for combo pieces, therefore 10 - (15-vec.len()) = num combopieces 
             // Empty slots have been cutted in request_combo()
-            let num_pieces = 10 - (15 - combo.len());
+    
+
+            let mut unused = 0;
+            for elements in combo {
+                if *elements == empty { unused += 1 }
+            }
+
+            let num_pieces = 10 - unused;
+
             let mut hit: usize = 0;
             let mut commander_combo_piece: bool = false; 
             // starts at 1 because 0 is number of combo initiated by source
-            for i in 1..(num_pieces+1) {    
+            for i in 1..=num_pieces {    
                 // looking through deck to fetch all available combos, take only combos which are completed therefor hit == num_pieces
                 for card in &deck.library {
-                    if card.name == *combo[i].replace("\"", "") {
+                    if card.name == combo[i] {
                         hit += 1;
                     } 
                 }
                 for commander in &deck.commander {
-                    if commander.name == *combo[i].replace("\"", "") {
+                    if commander.name == combo[i] {
                         hit += 1;
                         commander_combo_piece = true;
                     }
@@ -344,16 +354,18 @@ pub mod combo {
     fn seperate_combos(json: CEResult<Value>) -> Vec<String> {
 
         let mut vec = Vec::new();
+        let empty = String::from("\"\"");
 
-        match json {
+        match json {       
             Ok(t) =>{
                 vec = t["valueRanges"][0]["values"]
                     .to_string()
                     .trim()
-                    .replace(",\"\"", "")
+                    //.replace(",\"\"", "")
                     .split(",[")
                     .flat_map(str::parse::<String>)
                     .collect::<Vec<String>>();
+
             },
             Err(e) => println!("{}", e),
         }

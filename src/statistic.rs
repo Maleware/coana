@@ -15,6 +15,7 @@ pub mod basic {
         pub effect: Effect<'deck>,
         pub combo: Vec<ComboResult>,
     }
+    //TODO: Think about a place to construct combo other than basic, since this leads to two times construction due to tutor making
     impl <'deck> Basic<'deck> {
         pub fn new(deck: &Deck) -> Basic {
             Basic {

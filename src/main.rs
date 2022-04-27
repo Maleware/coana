@@ -208,6 +208,9 @@ fn main() {
                         println!("{}",card.name);
                     }
                 }
+                for card in &t.library {
+                    if card.name == String::from("Ghostly Flicker") {println!("{:?}", card)}
+                }
                 Deck::save(&t);  
             },
             Err(e) => println!("Error: {}", e),
