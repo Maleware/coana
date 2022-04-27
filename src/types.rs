@@ -646,6 +646,7 @@ pub enum Keywords{
 }
 #[derive(Debug, Clone, Eq, PartialEq, EnumIter, Serialize, Deserialize, Copy)]
 pub enum Restrictions {
+    Attack,
     OrLess,
     Dont,
     Exchange,
@@ -1144,7 +1145,7 @@ impl Deck {
     }
     pub fn save(deck: &Deck){
         let save = String::from("save/");
-        serde_json::to_writer(&File::create(format!("{}{}",save, deck.name)).expect("Can not folder save/ not found"),
+        serde_json::to_writer(&File::create(format!("{}{}",save, deck.name)).expect("Folder save/ not found"),
         &deck).expect("Can not write Deck"); 
     }
     pub fn new(name: String, commander: Vec<Card>, library: Vec<Card>) -> Deck {
