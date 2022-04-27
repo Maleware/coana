@@ -206,11 +206,12 @@ pub mod basic {
                 && card.contains(Keys::Turns, CardFields::Keys) ) {
                 lands.push(card);
             }
+            // Untap lands for dorks
             if card.contains(Keys::Untap, CardFields::Keys) 
             && card.contains(Restrictions::Target, CardFields::Restrictions)
             && card.contains(CardType::Land(None), CardFields::OracleType) 
             && !card.contains(CardType::Planeswalker, CardFields::CardType)
-            && !card.contains(CardType::Instant(None), CardFields::CardType){
+            && !card.contains(CardType::Instant(None), CardFields::CardType) {
                 dorks.push(card);
             }
             // Needed to get the mana reduction artifacts and effects
@@ -220,6 +221,7 @@ pub mod basic {
             && card.contains(Keys::Spell, CardFields::Keys)
             && !(card.contains(Zones::Battlefield, CardFields::Zones)  && !card.contains(Keys::ETB, CardFields::Keys) ) 
             && card.name != String::from("The Great Henge")
+            && card.name != String::from("Mystic Remora")
             {
                 if card.contains(CardType::Artifact(None), CardFields::CardType){
                     artifacts.push(card);
@@ -584,7 +586,10 @@ pub mod basic {
 
     }
 }
-/*  
+/*
+
+Think about this again, that's harder then it looks like....
+
 pub mod archetype {
     #[derive(Debug)]
     pub enum Archetype {
