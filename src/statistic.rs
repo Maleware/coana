@@ -586,11 +586,17 @@ pub mod basic {
 
     }
 }
-/*
 
-Think about this again, that's harder then it looks like....
 
+//Think about this again, that's harder then it looks like....
+
+// PCA suggested by Simon
 pub mod archetype {
+    //as long as under construction, remove if goes productive
+    #![allow(dead_code)] #![allow(unused_variables)] #![allow(unused_imports)]
+    use crate::types::{Deck, Card, CardFields};
+    use crate::types::*;
+
     #[derive(Debug)]
     pub enum Archetype {
         Flicker,
@@ -610,10 +616,70 @@ pub mod archetype {
         Tribal, // Human, Treefolk etc.
         Reanimator,
         Toolbox,
+        Combat,
     }
     
+    fn commander_theme(deck: Deck) -> Vec<Archetype> { 
+        let mut result = Vec::<Archetype>::new();
+
+        for commander in &deck.commander {
+            // First things first, we look after something happening every time when something else got played etb's or whatever  
+            if commander.contains(Restrictions::Whenever, CardFields::Restrictions) {
+                match &commander.oracle_types {
+                    Some(types) => {
+                        for element in types {
+                            match element {
+                                CardType::Artifact(_) => result.push(Archetype::Artifacts),
+                                CardType::Creature(_) => {
+                                    match &commander.restrictions {
+                                        Some(restrictions) => {
+                                            for restriction in restrictions {
+                                                match restriction {
+                                                    Restrictions::Combat => result.push(Archetype::Combat),
+                                                    Restrictions::Attack => result.push(Archetype::Combat),
+                                                    _ => (),
+                                                }
+                                            }
+                                        },
+                                        None => (),
+                                    }
+                                    match &commander.keys {
+                                        Some(keys) => {
+                                            for key in keys {
+                                                match key {
+                                                    Keys::ETB => result.push(Archetype::Flicker),
+                                                    Keys::Token => result.push(Archetype::Tokens),
+                                                    _ => (),
+                                                }
+                                            }
+
+                                        },
+                                        None => (),
+                                    }
+                                    
+                                }, // can be a lot, further investigation
+                                CardType::Enchantment(_) => result.push(Archetype::Enchantments),
+                                CardType::Instant(_) => result.push(Archetype::Storm),
+                                CardType::Sorcery(_) => result.push(Archetype::Storm),
+                                CardType::Land(_) => result.push(Archetype::LandsMatter),
+                                CardType::Planeswalker => result.push(Archetype::SuperFriends),
+                                _ => (),
+                            }
+                        }
+                    },
+                    None => (),
+                }
+
+            }
+        }
+
+        result 
+    }
+    fn focus(deck: Deck) {}
+    fn consitency(deck: Deck) {}
+
 }
-*/
+
 pub mod tutor {
     use std::{collections::HashMap};
     use strum::IntoEnumIterator;
