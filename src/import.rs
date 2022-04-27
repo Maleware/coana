@@ -180,7 +180,6 @@ pub mod scryfall {
 
 /* This is a new combo import, API: https://sheets.googleapis.com/v4/spreadsheets/1KqyDRZRCgy8YgMFnY0tHSw_3jC99Z0zFvJrPbfm66vA/values:batchGet?ranges=combos!A2:Q&key=AIzaSyBD_rcme5Ff37Evxa4eW5BFQZkmTbgpHew */
 
-// Sadly database inconsistent concerning length of dataframe, a different method to figure out number of combopieces is needed
 pub mod combo {
     use reqwest::blocking;
     use crate::{types::{CEResult, CEerror, Deck}};
@@ -221,6 +220,7 @@ pub mod combo {
     
             // Unused combo slots in data frame are empty, therefore a maximum of 10 slots minus empty ones is num_pieces
             let mut unused = 0;
+
             for elements in combo {
                 if *elements == empty { unused += 1 }
             }
@@ -231,7 +231,7 @@ pub mod combo {
             let mut commander_combo_piece: bool = false; 
             // starts at 1 because 0 is number of combo initiated by source
             for i in 1..=num_pieces {    
-                // looking through deck to fetch all available combos, take only combos which are completed therefor hit == num_pieces
+                // looking through deck to fetch all available combos, take only combos which are completed therefore hit == num_pieces
                 for card in &deck.library {
                     if card.name == combo[i] {
                         hit += 1;
