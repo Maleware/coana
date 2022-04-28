@@ -495,6 +495,7 @@ impl fmt::Display for Keys {
 }
 #[derive(Debug, Clone, Eq, PartialEq, EnumIter, Serialize, Deserialize, Copy)]
 pub enum Keywords{
+    Proliferate,
     Imprint,
     Deathtouch,
     Defender,

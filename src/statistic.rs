@@ -617,8 +617,11 @@ pub mod archetype {
         Reanimator,
         Toolbox,
         Combat,
+        Discard,
     }
     
+    // here we try to figure out all possible options a commander could be build, from there we try to match out of the 99 which way (or none) the particular deck 
+    // is build
     fn commander_theme(deck: Deck) -> Vec<Archetype> { 
         let mut result = Vec::<Archetype>::new();
 
@@ -637,12 +640,14 @@ pub mod archetype {
                                                 match restriction {
                                                     Restrictions::Combat => result.push(Archetype::Combat),
                                                     Restrictions::Attack => result.push(Archetype::Combat),
+                                                    Restrictions::Die => result.push(Archetype::Aristocrats),
                                                     _ => (),
                                                 }
                                             }
                                         },
                                         None => (),
                                     }
+                                    // if creature is meantioned this might lead to a flicker or token deck
                                     match &commander.keys {
                                         Some(keys) => {
                                             for key in keys {
@@ -668,6 +673,19 @@ pub mod archetype {
                         }
                     },
                     None => (),
+                }
+                // here whenever you gain life, draw a card and do something which is not covered by CardTypes or controll decks can do that too 
+                if commander.contains(Restrictions::GainLife, CardFields::Restrictions) {
+                    result.push(Archetype::Lifegain);
+                }
+                if commander.contains(Keys::Discard, CardFields::Keys) {
+                    if commander.contains(Keys::Opponent, CardFields::Keys) {
+                        result.push(Archetype::Discard)
+                    }
+                }
+                if commander.contains(Keywords::Proliferate, CardFields::Keywords) {
+                    result.push(Archetype::Counters);
+                    result.push(Archetype::SuperFriends);
                 }
 
             }
