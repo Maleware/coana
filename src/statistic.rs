@@ -717,7 +717,8 @@ pub mod archetype {
                 if commander.contains(Keys::Search, CardFields::Keys) 
                 && (!commander.contains(CardType::Land(None), CardFields::OracleType) || commander.contains(CardType::Basic, CardFields::OracleType)) {
                     result.push(Archetype::Toolbox)
-                } 
+                }
+                // Drawing cards means you can counter more stuff... Sure, very weak indicator 
                 if commander.contains(Keys::Draw, CardFields::Keys) { result.push(Archetype::Controle) }
             }
         }
@@ -809,7 +810,7 @@ pub mod tutor {
                 if tutor.contains(Keys::With, CardFields::Keys)
                 && !((tutor.contains(Keys::Exile, CardFields::Keys) && !tutor.contains(&tutor.name, CardFields::OracleText))
                     || tutor.contains(Keys::Token, CardFields::Keys)
-                    || tutor.contains(Keys::Counter, CardFields::Keys)) { 
+                    || (tutor.contains(Keys::Counter, CardFields::Keys) && tutor.name != String::from("Neoform"))) { 
                     targets.append(&mut restrictions(deck, tutor, sdeck, CardType::Creature(None)));
                 } else {
                     if !(tutor.contains(Keys::Exile, CardFields::Keys) 
@@ -1100,7 +1101,7 @@ pub mod tutor {
         || tutor.contains(Restrictions::ManaValue, CardFields::Restrictions) 
         || tutor.contains(Restrictions::ManaCost, CardFields::Restrictions) {
             if !(tutor.contains(Restrictions::Plus, CardFields::Restrictions) 
-            || tutor.contains(String::from("X"), CardFields::ManaCost)){
+            || tutor.contains(String::from("X"), CardFields::ManaCost)) {
                 // Special excuse for Urza's Saga, need to think about different representation of planeswalker and saga textboxes
                 if tutor.name == String::from("Urza's Saga"){
                   for card in &sdeck.artifacts {
