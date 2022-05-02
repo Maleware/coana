@@ -1,7 +1,8 @@
 use std::{fs, io};
 use clap::{App, Arg};
-use crate::{types::{Deck, CEResult}, logic::database, statistic::tutor};
+use crate::{types::{Deck, CEResult}, logic::{database, thread_fn::deck}, statistic::tutor};
 use crate::statistic::basic;
+use crate::statistic::archetype;
 
 mod types;
 mod import;
@@ -207,7 +208,9 @@ fn main() {
                     for card in link {
                         println!("{}",card.name);
                     }
-                } 
+                }
+                
+                archetype::from(&t); 
                 Deck::save(&t);  
             },
             Err(e) => println!("Error: {}", e),
