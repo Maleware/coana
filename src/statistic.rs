@@ -614,26 +614,40 @@ pub mod archetype {
         Aristocrats,
         Artifacts,
         Tribal, // Human, Treefolk etc.
-        Reanimator,
+        Graveyard,
         Toolbox,
         Combat,
         Discard,
+        Controle,
     }
     
     // here we try to figure out all possible options a commander could be build, from there we try to match out of the 99 which way (or none) the particular deck 
     // is build
-    fn commander_theme(deck: Deck) -> Vec<Archetype> { 
+    pub fn from(deck: &Deck) {
+        println!("\nFor commander {:?} detected possible Archetypes", deck.commander);
+        for archtype in commander_theme(deck) {
+            println!("\n {:?}", &archtype);
+        }
+    }
+    fn commander_theme(deck: &Deck) -> Vec<Archetype> { 
         let mut result = Vec::<Archetype>::new();
+        
+        /* 
+            Actual missing things:
+            Voltron
+        */
 
         for commander in &deck.commander {
-            // First things first, we look after something happening every time when something else got played etb's or whatever  
-            if commander.contains(Restrictions::Whenever, CardFields::Restrictions) {
+            // First things first, we look after something happening every time when something else got played etb's or whatever, same is true for begin of combat or whatever phase  
+            if commander.contains(Restrictions::Whenever, CardFields::Restrictions)
+            // A lot of commmander actually do something at the begin of something else 
+            || commander.contains(Restrictions::AtBeginnOf, CardFields::Restrictions) {
                 match &commander.oracle_types {
                     Some(types) => {
                         for element in types {
                             match element {
                                 CardType::Artifact(_) => result.push(Archetype::Artifacts),
-                                CardType::Creature(_) => {
+                                CardType::Creature(subtypes) => {
                                     match &commander.restrictions {
                                         Some(restrictions) => {
                                             for restriction in restrictions {
@@ -661,6 +675,11 @@ pub mod archetype {
                                         },
                                         None => (),
                                     }
+                                    // if your commander is working with a kind of creature subtypes, it is technically possible to build a tribal deck
+                                    match subtypes {
+                                        Some(_) => result.push(Archetype::Tribal),
+                                        None => (),
+                                    }
                                     
                                 }, // can be a lot, further investigation
                                 CardType::Enchantment(_) => result.push(Archetype::Enchantments),
@@ -676,7 +695,7 @@ pub mod archetype {
                 }
                 // here whenever you gain life, draw a card and do something which is not covered by CardTypes or controll decks can do that too 
                 if commander.contains(Restrictions::GainLife, CardFields::Restrictions) {
-                    result.push(Archetype::Lifegain);
+                    result.push(Archetype::Lifegain)
                 }
                 if commander.contains(Keys::Discard, CardFields::Keys) {
                     if commander.contains(Keys::Opponent, CardFields::Keys) {
@@ -687,7 +706,19 @@ pub mod archetype {
                     result.push(Archetype::Counters);
                     result.push(Archetype::SuperFriends);
                 }
-
+                if (commander.contains(Zones::Battlefield, CardFields::Zones) && commander.contains(Zones::Graveyard, CardFields::Zones) )
+                && (commander.contains(Keys::Put, CardFields::Keys) || commander.contains(Keys::Return, CardFields::Keys) ) {
+                    result.push(Archetype::Graveyard)
+                }
+                if (commander.contains(Zones::Library, CardFields::Zones) && commander.contains(Zones::Graveyard, CardFields::Zones) )
+                && commander.contains(Keys::Opponent, CardFields::Keys) {
+                    result.push(Archetype::Mill)
+                }
+                if commander.contains(Keys::Search, CardFields::Keys) 
+                && (!commander.contains(CardType::Land(None), CardFields::OracleType) || commander.contains(CardType::Basic, CardFields::OracleType)) {
+                    result.push(Archetype::Toolbox)
+                } 
+                if commander.contains(Keys::Draw, CardFields::Keys) { result.push(Archetype::Controle) }
             }
         }
 
