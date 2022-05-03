@@ -102,32 +102,32 @@ fn main() {
                     println!("{:?}", *combo);
                 }
 
-                println!("\nCreatures: {}", basics.cardtype.creatures.len());
-                for item in basics.cardtype.creatures {
+                println!("\nCreatures: {}", &basics.cardtype.creatures.len());
+                for item in &basics.cardtype.creatures {
                     println!("{}", item.name);
                 }
                 println!("\nArtifacts: {}", basics.cardtype.artifacts.len());
-                for item in basics.cardtype.artifacts {
+                for item in &basics.cardtype.artifacts {
                     println!("{}", item.name);
                 } 
                 println!("\nEnchantments: {}", basics.cardtype.enchantments.len());
-                for item in basics.cardtype.enchantments {
+                for item in &basics.cardtype.enchantments {
                     println!("{}", item.name);
                 } 
                 println!("\nLands: {}", basics.cardtype.lands.len());
-                for item in basics.cardtype.lands {
+                for item in &basics.cardtype.lands {
                     println!("{}", item.name);
                 } 
                 println!("\nInstants: {}", basics.cardtype.instants.len());
-                for item in basics.cardtype.instants {
+                for item in &basics.cardtype.instants {
                     println!("{}", item.name);
                 } 
                 println!("\nSorcerys: {}", basics.cardtype.sorcerys.len());
-                for item in basics.cardtype.sorcerys {
+                for item in &basics.cardtype.sorcerys {
                     println!("{}", item.name);
                 }  
                 println!("\nPlaneswalkers: {} \n", basics.cardtype.planeswalkers.len());
-                for item in basics.cardtype.planeswalkers {
+                for item in &basics.cardtype.planeswalkers {
                     println!("{}", item.name);
                 }
                 for (key, card) in basics.mana_cost {
@@ -210,7 +210,7 @@ fn main() {
                     }
                 }
                 
-                archetype::from(&t); 
+                archetype::from(&t, &basics.cardtype); 
                 Deck::save(&t);  
             },
             Err(e) => println!("Error: {}", e),
