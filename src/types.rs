@@ -745,7 +745,7 @@ impl fmt::Display for Restrictions{
             &Restrictions::Ten => write!(f, "{}", "10"),
             &Restrictions::Eleven => write!(f, "{}", "11"),
             &Restrictions::Twelve => write!(f, "{}", "12"),
-            &Restrictions::AtBeginnOf => write!(f, "{}", "At the begin of"),
+            &Restrictions::AtBeginnOf => write!(f, "{}", "at the beginning of"),
             &Restrictions::Cmc => write!(f, "{}", "cmc"),
             &Restrictions::ManaValue => write!(f, "{}", "Mana Value"),
             &Restrictions::ManaCost => write!(f, "{}", "Mana Cost"),
