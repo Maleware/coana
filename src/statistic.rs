@@ -597,6 +597,8 @@ pub mod archetype {
     use crate::types::{Deck, Card, CardFields};
     use crate::types::*;
 
+    use super::basic::Cardtype;
+
     #[derive(Debug)]
     pub enum Archetype {
         Flicker,
@@ -620,10 +622,77 @@ pub mod archetype {
         Discard,
         Controle,
     }
+
+    impl Archetype {
+        /*  Might not use it anyway. Just keep it for the Idea. */
+        pub fn to_string(&self) -> String {
+            match self {
+                Archetype::Flicker => {return String::from("exile target")},
+                Archetype::Storm => {return String::from("you cast")},
+                Archetype::Enchantments => {return String::from("enchantment")}, 
+                Archetype::Pod => {return String::from("search your library for a creature with")},
+                Archetype::LandsMatter => {return String::from("whenever a land")},
+                Archetype::Wheel => {return String::from("discard your hand")},
+                Archetype::Lifegain => {return String::from("you gain life")},
+                Archetype::Mill => {return String::from("mill")},
+                Archetype::Tokens => {return String::from("token")},
+                Archetype::Voltron => {return String::from("")}, // no idea whats the common support text for Voltron decks
+                Archetype::Counters => {return String::from("put a counter")},
+                Archetype::SuperFriends => {return String::from("proliferate")},
+                Archetype::Aristocrats => {return String::from("sacrifice a creature")},
+                Archetype::Artifacts => {return String::from("artifact")},
+                Archetype::Tribal => {return String::from("for each other")},
+                Archetype::Graveyard => {return String::from("to the battlefield")},
+                Archetype::Toolbox => {return String::from("search your library")},
+                Archetype::Combat => {return String::from("combat")},
+                Archetype::Discard => {return String::from("discard")},
+                Archetype::Controle => {return String::from("")}, //same here, strugle to find a wording which is not straight categorie counterspells or spell payoff
+            }
+        }
+        // Experimental textblock recognition....
+        pub fn to_oracle(&self) -> Vec<String> {
+            match self {
+                Archetype::Flicker => {return vec!["exile target".to_string(), "return".to_string(), "to battlefield".to_string()]},
+                Archetype::Storm => {return vec!["you cast".to_string(), "whenever".to_string()]},
+                Archetype::Enchantments => {return vec!["enchantment".to_string()]}, 
+                Archetype::Pod => {return vec!["sacrifice creature".to_string(), "search your library".to_string(), "on the battlefield".to_string()]},
+                Archetype::LandsMatter => {return vec!["landfall".to_string()]},
+                Archetype::Wheel => {return vec!["each player".to_string(), "then draw".to_string()]}, 
+                Archetype::Lifegain => {return vec!["you gain life".to_string()]},
+                Archetype::Mill => {return vec!["opponent".to_string(), "put".to_string(), "card".to_string()]},
+                Archetype::Tokens => {return vec!["when".to_string(), "a token".to_string()]}, //not quiet sure here where to recognize those strings
+                Archetype::Voltron => {return vec!["".to_string()]}, // no idea whats the common support text for Voltron decks
+                Archetype::Counters => {return vec!["counter".to_string(), "would".to_string(), "placed".to_string()]},
+                Archetype::SuperFriends => {return vec!["activate".to_string(), "abilities".to_string()]},
+                Archetype::Aristocrats => {return vec!["whenever".to_string(), "die".to_string() ]},
+                Archetype::Artifacts => {return vec!["artifact".to_string()]},
+                Archetype::Tribal => {return vec!["whenever a".to_string()]},
+                Archetype::Graveyard => {return vec!["return".to_string(),"graveyard".to_string(), "battlefield".to_string() ]},
+                Archetype::Toolbox => {return vec!["".to_string()]},
+                Archetype::Combat => {return vec!["another".to_string(), "combat".to_string()]},
+                Archetype::Discard => {return vec!["opponent".to_string(), "discard".to_string()]},
+                Archetype::Controle => {return vec!["whenever".to_string(), "you".to_string(), "counter".to_string()]},
+            } 
+        }
+    }
     
+    pub struct Focus<'deck> {
+        archetype: Archetype,
+        cards: Vec<&'deck Card>,
+    }
+    
+    impl Focus<'_> {
+        pub fn new(archetype: Archetype, cards: Vec<&Card>) -> Focus<'static>{
+            Focus {
+                archetype,
+                cards: Vec::<&Card>::new(),
+            }
+        }
+    }
+
     // here we try to figure out all possible options a commander could be build, from there we try to match out of the 99 which way (or none) the particular deck 
     // is build
-    pub fn from(deck: &Deck) {
+    pub fn from(deck: &Deck, sdeck: &Cardtype) {
         println!("\nFor commander {:?} detected possible Archetypes", deck.commander);
         for archtype in commander_theme(deck) {
             println!("\n {:?}", &archtype);
@@ -634,7 +703,7 @@ pub mod archetype {
         
         /* 
             Actual missing things:
-            Voltron
+            Voltron, Pod
         */
 
         for commander in &deck.commander {
@@ -725,7 +794,49 @@ pub mod archetype {
 
         result 
     }
-    fn focus(deck: Deck) {}
+    fn focus(deck: &Deck, archetypes: Vec<Archetype>, sdeck: &Cardtype) {
+        
+        let mut result = Vec::<Focus>::new();
+
+        for archetype in archetypes {
+            let mut buffer = Vec::<&Card>::new();
+
+            match archetype {
+                Archetype::Flicker => {
+                    let mut hit = 0;
+                    for text in Archetype::Flicker.to_oracle() {
+                        for card in &deck.library {
+                            if card.contains(&text, CardFields::OracleText) { 
+                                buffer.push(&card);
+                                hit += 1;
+                            }
+                        }
+                    }
+                    result.push(Focus::new(Archetype::Flicker, buffer));
+
+                },
+                Archetype::Storm => (),
+                Archetype::Enchantments => (), 
+                Archetype::Pod => (),
+                Archetype::LandsMatter => (),
+                Archetype::Wheel => (),
+                Archetype::Lifegain => (), 
+                Archetype::Mill => (),
+                Archetype::Tokens => (),
+                Archetype::Voltron => (), // no idea whats the common support text for Voltron decks
+                Archetype::Counters => (),
+                Archetype::SuperFriends => (),
+                Archetype::Aristocrats => (),
+                Archetype::Artifacts => (),
+                Archetype::Tribal => (),
+                Archetype::Graveyard => (),
+                Archetype::Toolbox => (),
+                Archetype::Combat => (),
+                Archetype::Discard => (),
+                Archetype::Controle => (), 
+           };
+       } 
+    }
     fn consitency(deck: Deck) {}
 
 }
