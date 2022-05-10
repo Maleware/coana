@@ -650,28 +650,71 @@ pub mod archetype {
             }
         }
         // Experimental textblock recognition.... This might be very fruitful in the longrun, maybe we have to wirte some more to_oracle() functions 
-        pub fn to_oracle(&self) -> Vec<String> {
+        pub fn to_oracle(&self) -> Vec<Vec<String>> {
             match self {
-                Archetype::Flicker => {return vec!["exile target".to_string(), "return".to_string(), "to battlefield".to_string()]},
-                Archetype::Storm => {return vec!["you cast".to_string(), "whenever".to_string()]},
-                Archetype::Enchantments => {return vec!["enchantment".to_string()]}, 
-                Archetype::Pod => {return vec!["sacrifice creature".to_string(), "search your library".to_string(), "on the battlefield".to_string()]},
-                Archetype::LandsMatter => {return vec!["landfall".to_string()]},
-                Archetype::Wheel => {return vec!["each player".to_string(), "then draw".to_string()]}, 
-                Archetype::Lifegain => {return vec!["you gain life".to_string()]},
-                Archetype::Mill => {return vec!["opponent".to_string(), "put".to_string(), "card".to_string()]},
-                Archetype::Tokens => {return vec!["would".to_string(), "create".to_string(),"token".to_string()]}, //not quiet sure here where to recognize those strings
-                Archetype::Voltron => {return vec!["".to_string()]}, // no idea whats the common support text for Voltron decks
-                Archetype::Counters => {return vec!["counter".to_string(), "would".to_string(), "placed".to_string()]},
-                Archetype::SuperFriends => {return vec!["activate".to_string(), "abilities".to_string()]},
-                Archetype::Aristocrats => {return vec!["whenever".to_string(), "die".to_string() ]},
-                Archetype::Artifacts => {return vec!["artifact".to_string()]},
-                Archetype::Tribal => {return vec!["whenever a".to_string()]},
-                Archetype::Graveyard => {return vec!["return".to_string(),"graveyard".to_string(), "from".to_string()]},
-                Archetype::Toolbox => {return vec!["".to_string()]},
-                Archetype::Combat => {return vec!["whenever".to_string(), "combat".to_string()]},
-                Archetype::Discard => {return vec!["opponent".to_string(), "discard".to_string()]},
-                Archetype::Controle => {return vec!["whenever".to_string(), "you".to_string(), "counter".to_string()]},
+                Archetype::Flicker => {
+                    return vec![vec!["exile target".to_string(), "return".to_string(), "battlefield".to_string()],
+                    vec!["when".to_string(), "enters the battlefield".to_string()]]
+                },
+                Archetype::Storm => {return vec![vec!["you cast".to_string(), "whenever".to_string()]]},
+                Archetype::Enchantments => {return vec![vec!["enchantment".to_string()]]}, 
+                Archetype::Pod => {return vec![vec!["sacrifice creature".to_string(), "search your library".to_string(), "on the battlefield".to_string()]]},
+                Archetype::LandsMatter => {return vec![vec!["land".to_string()]]},
+                Archetype::Wheel => {
+                    return vec![vec!["each player".to_string(), "then draw".to_string()],
+                    vec!["whenever".to_string(), "you".to_string(), "draw".to_string()],
+                    vec!["whenever".to_string(), "you".to_string(), "discard".to_string()]]
+                }, 
+                Archetype::Lifegain => {
+                    return vec![vec!["you gain life".to_string()],
+                    vec!["pay".to_string(), "life".to_string()],
+                    vec!["your".to_string(), "life".to_string(), "total".to_string()]]
+                },
+                Archetype::Mill => {
+                    return vec![vec!["put".to_string(), "card".to_string(), "graveyard".to_string()],
+                    vec!["mill".to_string(), "card".to_string()],
+                    vec!["mill".to_string(), "deck".to_string()]]
+                },
+                Archetype::Tokens => {
+                    return vec![vec!["create".to_string(),"token".to_string()],
+                    vec!["make".to_string(), "token".to_string()],
+                    vec!["sacrifice".to_string(), "token".to_string()]]
+                },
+                Archetype::Voltron => {return vec![vec!["".to_string()]]}, // no idea whats the common support text for Voltron decks
+                Archetype::Counters => {return vec![vec!["counter".to_string(), "would".to_string(), "placed".to_string()]]},
+                Archetype::SuperFriends => {
+                    return vec![vec!["activate".to_string(), "abilities".to_string()],
+                    vec!["proliferate".to_string()]]
+                },
+                Archetype::Aristocrats => {
+                    return vec![vec!["whenever".to_string(), "die".to_string() ],
+                    vec!["sacrifice".to_string(), "a".to_string(), "creature".to_string()]]
+                },
+                Archetype::Artifacts => {return vec![vec!["artifact".to_string()]]},
+                Archetype::Tribal => {
+                    return vec![vec!["each".to_string(), "creature".to_string()],
+                    vec!["whenever".to_string(), "creature".to_string()]]
+                },
+                Archetype::Graveyard => {
+                    return vec![vec!["return".to_string(),"graveyard".to_string(), "from".to_string()],
+                    vec!["when".to_string(), "into".to_string(), "graveyard".to_string()]]
+                },
+                Archetype::Toolbox => {return vec![vec!["".to_string()]]},
+                Archetype::Combat => {
+                    return vec![vec!["whenever".to_string(), "combat".to_string()],
+                    vec!["whenever".to_string(), "attacks".to_string()],
+                    vec!["whenever".to_string(), "deals".to_string(), "damaga".to_string()]]
+                },
+                Archetype::Discard => {
+                    return vec![vec!["opponent".to_string(), "discard".to_string()],
+                    vec!["you".to_string(), "discard".to_string()],
+                    vec!["each".to_string(), "discard".to_string()]]
+                },
+                Archetype::Controle => {
+                    return vec![vec!["whenever".to_string(), "you".to_string(), "counter".to_string()],
+                    vec!["you".to_string(), "draw".to_string(), "card".to_string()],
+                    vec!["put".to_string(), "your".to_string(), "hand".to_string()]]
+                },
             } 
         }
         // Connecting keywords on cards with specific strategie gaining advantage from those keywords
@@ -718,12 +761,8 @@ pub mod archetype {
 
     // here we try to figure out all possible options a commander could be build, from there we try to match out of the 99 which way (or none) the particular deck 
     // is build
-    pub fn from<'deck>(deck: &'deck Deck, sdeck: &Cardtype, basics: &crate::basic::Basic) -> Vec<Focus<'deck>>{
-        println!("\nFor commander {:?} detected possible Archetypes", deck.commander);
-       
+    pub fn from<'deck>(deck: &'deck Deck, sdeck: &Cardtype, basics: &crate::basic::Basic) -> Vec<Focus<'deck>>{  
         let synergy = focus(deck, commander_theme(deck), basics);
-        println!("Detected focus: ");
-
         synergy
     }
     fn commander_theme(deck: &Deck) -> Vec<Archetype> { 
@@ -822,7 +861,6 @@ pub mod archetype {
 
         result 
     }
-    // like this, it might get a little longish, how to refracture such things?
     fn focus<'deck>(deck: &'deck Deck, archetypes: Vec<Archetype>, basics: &crate::basic::Basic) -> Vec<Focus<'deck>>{
         
         let mut result = Vec::<Focus>::new();
@@ -836,7 +874,6 @@ pub mod archetype {
        } 
        result
     }
-
     fn consitency(deck: Deck) {}
     fn link_to_archetype<'deck>(archetype: Archetype, deck:  &'deck Deck, basics: &crate::basic::Basic) -> Option<Focus<'deck>> {
         
@@ -845,47 +882,61 @@ pub mod archetype {
 
         for card in &deck.library {
 
-            let mut hit = 0;
-            let mut interaction = false;
+            
 
-            for text in &archetype.to_oracle() {
-                if card.contains(&text, CardFields::OracleText) {    
-                    hit += 1;
-                }
-            }
-            if hit == archetype.to_oracle().len() as usize { 
-               
-                // the way things get searched on the cards for archetypesynergy leads to find interaction. Interaction is no direct synergy piece
-                for removal in &basics.effect.removal {
-                    if removal.name == card.name {
-                        interaction = true;
+
+            for block in &archetype.to_oracle() {
+                let mut hit = 0;
+                let mut interaction = false;
+                let mut already_found = false;
+                for text in block{
+                    if card.contains(&text, CardFields::OracleText) {    
+                        hit += 1;
                     }
                 }
-
-                for counter in &basics.effect.counter {
-                    if counter.name == card.name {
-                        interaction = true;
-                    }
-                }
-
-                for bounce in &basics.effect.bounce{
-                    if bounce.name == card.name {
-                        interaction = true;
-                    }
-                }
+            
+                if hit == block.len() as usize { 
                 
-                if !interaction {
-                    buffer.push(&card);
+                    // the way things get searched on the cards for archetypesynergy leads to find interaction. Interaction is no direct synergy piece
+                    for removal in &basics.effect.removal {
+                        if removal.name == card.name {
+                            interaction = true;
+                        }
+                    }
+
+                    for counter in &basics.effect.counter {
+                        if counter.name == card.name {
+                            interaction = true;
+                        }
+                    }
+
+                    for bounce in &basics.effect.bounce{
+                        if bounce.name == card.name {
+                            interaction = true;
+                        }
+                    }
+                    
+                    if !interaction {
+                        for founded in &buffer{
+                            if founded.name == card.name {
+                                already_found = true;
+                            }
+                        }
+
+                        if !already_found {
+                            buffer.push(&card);
+                        }
+                        
+                    }
                 }
-            }
+            }   
         }
         
         if buffer.len() != 0 {
             return Some(Focus::new(archetype, buffer));
         }
         None
-    }
-    
+    }   
     fn archetype_to_keyword<'deck>(mut focus: Focus<'deck>, deck: &'deck Deck) -> Focus<'deck> {
 
         for key in focus.archetype.to_keywords(){
