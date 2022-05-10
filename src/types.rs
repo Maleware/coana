@@ -647,6 +647,7 @@ pub enum Keywords{
 }
 #[derive(Debug, Clone, Eq, PartialEq, EnumIter, Serialize, Deserialize, Copy)]
 pub enum Restrictions {
+    AnyNumber,
     Attack,
     OrLess,
     Dont,
@@ -727,6 +728,7 @@ pub enum Restrictions {
 impl fmt::Display for Restrictions{
    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
+            &Restrictions::AnyNumber => write!(f, "{}", "any number"),
             &Restrictions::OneStr => write!(f, "{}", "One"),
             &Restrictions::TwoStr => write!(f, "{}", "Two"),
             &Restrictions::ThreeStr => write!(f, "{}", "Three"),
@@ -967,7 +969,7 @@ impl Card {
 
             ),
             CardFields::OracleText=> {
-                if self.oracle_text.contains(&search.to_string()) {
+                if self.oracle_text.to_lowercase().contains(&search.to_string()) {
                     return true;
                 }
                 return false;

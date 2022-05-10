@@ -431,7 +431,7 @@ pub mod basic {
     fn is_removal(card: &Card) -> bool {
         if( card.contains(Keys::Destroy, CardFields::Keys) || (card.contains(Keys::Exile, CardFields::Keys) && !card.contains(&*card.name, CardFields::OracleText) && !card.contains(Keys::Return, CardFields::Keys))) 
         && card.contains(Restrictions::Target, CardFields::Restrictions) 
-        && ( !card.contains(Zones::Hand, CardFields::Zones) || card.contains(Keywords::Evoke, CardFields::Keywords) )
+        && ( !(card.contains(Zones::Hand, CardFields::Zones) && !card.contains(Restrictions::AnyNumber, CardFields::Restrictions))|| card.contains(Keywords::Evoke, CardFields::Keywords) )
             // Overload boardwipes are removal too || Ugly hack to exlcude Sevinnes Reclamation
         &&!card.contains(Keywords::Flashback, CardFields::Keywords) && !card.contains(Restrictions::Own, CardFields::Restrictions) {
             return true; 
@@ -649,7 +649,7 @@ pub mod archetype {
                 Archetype::Controle => {return String::from("")}, //same here, strugle to find a wording which is not straight categorie counterspells or spell payoff
             }
         }
-        // Experimental textblock recognition....
+        // Experimental textblock recognition.... This might be very fruitful in the longrun, maybe we have to wirte some more to_oracle() functions 
         pub fn to_oracle(&self) -> Vec<String> {
             match self {
                 Archetype::Flicker => {return vec!["exile target".to_string(), "return".to_string(), "to battlefield".to_string()]},
@@ -660,7 +660,7 @@ pub mod archetype {
                 Archetype::Wheel => {return vec!["each player".to_string(), "then draw".to_string()]}, 
                 Archetype::Lifegain => {return vec!["you gain life".to_string()]},
                 Archetype::Mill => {return vec!["opponent".to_string(), "put".to_string(), "card".to_string()]},
-                Archetype::Tokens => {return vec!["when".to_string(), "a token".to_string()]}, //not quiet sure here where to recognize those strings
+                Archetype::Tokens => {return vec!["when".to_string(), "token".to_string()]}, //not quiet sure here where to recognize those strings
                 Archetype::Voltron => {return vec!["".to_string()]}, // no idea whats the common support text for Voltron decks
                 Archetype::Counters => {return vec!["counter".to_string(), "would".to_string(), "placed".to_string()]},
                 Archetype::SuperFriends => {return vec!["activate".to_string(), "abilities".to_string()]},
@@ -675,28 +675,38 @@ pub mod archetype {
             } 
         }
     }
-    
+    #[derive(Debug)]
     pub struct Focus<'deck> {
         archetype: Archetype,
         cards: Vec<&'deck Card>,
     }
     
     impl Focus<'_> {
-        pub fn new(archetype: Archetype, cards: Vec<&Card>) -> Focus<'static>{
+        pub fn new<'deck>(archetype: Archetype, cards: Vec<&'deck Card>) -> Focus<'deck>{
             Focus {
                 archetype,
-                cards: Vec::<&Card>::new(),
+                cards,
             }
         }
     }
 
     // here we try to figure out all possible options a commander could be build, from there we try to match out of the 99 which way (or none) the particular deck 
     // is build
-    pub fn from(deck: &Deck, sdeck: &Cardtype) {
+    pub fn from(deck: &Deck, sdeck: &Cardtype, basics: &crate::basic::Basic) {
         println!("\nFor commander {:?} detected possible Archetypes", deck.commander);
         for archtype in commander_theme(deck) {
             println!("\n {:?}", &archtype);
         }
+        let synergy = focus(deck, commander_theme(deck), basics);
+        println!("Detected focus: ");
+
+        for focus in synergy {
+            println!("For focus {:?} found synergy: \n", focus.archetype);
+            for card in focus.cards {
+                println!("{}", card.name);
+            }
+        }
+
     }
     fn commander_theme(deck: &Deck) -> Vec<Archetype> { 
         let mut result = Vec::<Archetype>::new();
@@ -794,51 +804,69 @@ pub mod archetype {
 
         result 
     }
-    fn focus(deck: &Deck, archetypes: Vec<Archetype>, sdeck: &Cardtype) {
+    // like this, it might get a little longish, how to refracture such things?
+    fn focus<'deck>(deck: &'deck Deck, archetypes: Vec<Archetype>, basics: &crate::basic::Basic) -> Vec<Focus<'deck>>{
         
         let mut result = Vec::<Focus>::new();
 
         for archetype in archetypes {
-            let mut buffer = Vec::<&Card>::new();
-
-            match archetype {
-                Archetype::Flicker => {
-                    let mut hit = 0;
-                    for text in Archetype::Flicker.to_oracle() {
-                        for card in &deck.library {
-                            if card.contains(&text, CardFields::OracleText) { 
-                                buffer.push(&card);
-                                hit += 1;
-                            }
-                        }
-                    }
-                    result.push(Focus::new(Archetype::Flicker, buffer));
-
-                },
-                Archetype::Storm => (),
-                Archetype::Enchantments => (), 
-                Archetype::Pod => (),
-                Archetype::LandsMatter => (),
-                Archetype::Wheel => (),
-                Archetype::Lifegain => (), 
-                Archetype::Mill => (),
-                Archetype::Tokens => (),
-                Archetype::Voltron => (), // no idea whats the common support text for Voltron decks
-                Archetype::Counters => (),
-                Archetype::SuperFriends => (),
-                Archetype::Aristocrats => (),
-                Archetype::Artifacts => (),
-                Archetype::Tribal => (),
-                Archetype::Graveyard => (),
-                Archetype::Toolbox => (),
-                Archetype::Combat => (),
-                Archetype::Discard => (),
-                Archetype::Controle => (), 
-           };
+            
+            match link_to_archetype(archetype, &deck, basics) {
+                Some(results) => result.push(results),
+                None => (),
+            }
        } 
+       result
     }
-    fn consitency(deck: Deck) {}
 
+    fn consitency(deck: Deck) {}
+    fn link_to_archetype<'deck>(archetype: Archetype, deck:  &'deck Deck, basics: &crate::basic::Basic) -> Option<Focus<'deck>> {
+        
+        
+        let mut buffer = Vec::<&Card>::new();
+
+        for card in &deck.library {
+
+            let mut hit = 0;
+            let mut interaction = false;
+
+            for text in &archetype.to_oracle() {
+                if card.contains(&text, CardFields::OracleText) {    
+                    hit += 1;
+                }
+            }
+            if hit == archetype.to_oracle().len() as usize { 
+               
+                // the way things get searched on the cards for archetypesynergy leads to find interaction. Interaction is no direct synergy piece
+                for removal in &basics.effect.removal {
+                    if removal.name == card.name {
+                        interaction = true;
+                    }
+                }
+
+                for counter in &basics.effect.counter {
+                    if counter.name == card.name {
+                        interaction = true;
+                    }
+                }
+
+                for bounce in &basics.effect.bounce{
+                    if bounce.name == card.name {
+                        interaction = true;
+                    }
+                }
+                
+                if !interaction {
+                    buffer.push(&card);
+                }
+            }
+        }
+        
+        if buffer.len() != 0 {
+            return Some(Focus::new(archetype, buffer));
+        }
+        None
+    }
 }
 
 pub mod tutor {

@@ -130,76 +130,76 @@ fn main() {
                 for item in &basics.cardtype.planeswalkers {
                     println!("{}", item.name);
                 }
-                for (key, card) in basics.mana_cost {
+                for (key, card) in &basics.mana_cost {
                     println!("Mana Cost: {} Number:{:?} \n", key, card.len());
                 }
-                for (colour, pips) in basics.mana_dist.manacost {
+                for (colour, pips) in &basics.mana_dist.manacost {
                     println!("Colour: {:?}, Pips: {}",colour,pips )
                 }
                 println!("\n");
-                for (colour, pips) in basics.mana_dist.manaprod {
+                for (colour, pips) in &basics.mana_dist.manaprod {
                     println!("Colour: {:?}, Producing: {}", colour, pips);
                 }
 
                 println!("\nDorks:");
-                for dork in basics.mana_dist.dorks {
+                for dork in &basics.mana_dist.dorks {
                     println!("{}", dork.name);
                 }
                 println!("\nArtifacts:");
-                for artifact in basics.mana_dist.artifacts {
+                for artifact in &basics.mana_dist.artifacts {
                     println!("{}", artifact.name);
                 }
                 println!("\nEnchantment:");
-                for enchantment in basics.mana_dist.enchantments {
+                for enchantment in &basics.mana_dist.enchantments {
                     println!("{}", enchantment.name);
                 }
                 println!("\nLands:");
-                for land in basics.mana_dist.lands {
+                for land in &basics.mana_dist.lands {
                     println!("{}", land.name);
                 }
 
                 println!("\nDraws:");
-                for draw in basics.effect.draw {
+                for draw in &basics.effect.draw {
                     println!("{}", draw.name);
                 }
                 println!("\nBounce:");
-                for bounce in basics.effect.bounce {
+                for bounce in &basics.effect.bounce {
                     println!("{}", bounce.name);
                 }
                 println!("\nRemoval:");
-                for removal in basics.effect.removal {
+                for removal in &basics.effect.removal {
                     println!("{}", removal.name);
                 }  
                 println!("\nBoardwipe:");
-                for boardwipe in basics.effect.boardwipe {
+                for boardwipe in &basics.effect.boardwipe {
                     println!("{}", boardwipe.name);
                 } 
                 println!("\nLord:");
-                for lord in basics.effect.lord {
+                for lord in &basics.effect.lord {
                     println!("{}", lord.name);
                 } 
                 println!("\nCounter:");
-                for counter in basics.effect.counter {
+                for counter in &basics.effect.counter {
                     println!("{}", counter.name);
                 } 
                 println!("\nPayoff:");
-                for payoff in basics.effect.payoff {
+                for payoff in &basics.effect.payoff {
                     println!("{}", payoff.name);
                 } 
                 println!("\nRecursion:");
-                for recursion in basics.effect.recursion {
+                for recursion in &basics.effect.recursion {
                     println!("{}", recursion.name);
                 } 
                 println!("\nReanimation:");
-                for rean in basics.effect.reanimation {
+                for rean in &basics.effect.reanimation {
                     println!("{}", rean.name);
                 }
                 println!("\nStax:");
-                for stax in basics.effect.stax {
+                for stax in &basics.effect.stax {
                     println!("{}", stax.name);
                 }
                 println!("\nFast Mana:");
-                for fastmana in basics.effect.fastmana {
+                for fastmana in &basics.effect.fastmana {
                     println!("{}", fastmana.name);
                 }
                 println!("Tutorlinking: \n"); 
@@ -210,7 +210,7 @@ fn main() {
                     }
                 }
                 
-                archetype::from(&t, &basics.cardtype); 
+                archetype::from(&t, &basics.cardtype, &basics); 
                 Deck::save(&t);  
             },
             Err(e) => println!("Error: {}", e),
