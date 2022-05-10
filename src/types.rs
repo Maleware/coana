@@ -495,7 +495,12 @@ impl fmt::Display for Keys {
 }
 #[derive(Debug, Clone, Eq, PartialEq, EnumIter, Serialize, Deserialize, Copy)]
 pub enum Keywords{
+    Attach,
+    Bestow,
+    Mill,
     Explore,
+    Tap, 
+    Untap,
     Surveil, 
     Scry,
     Populate,

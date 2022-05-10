@@ -594,7 +594,7 @@ pub mod basic {
 pub mod archetype {
     //as long as under construction, remove if goes productive
     #![allow(dead_code)] #![allow(unused_variables)] #![allow(unused_imports)]
-    use crate::types::{Deck, Card, CardFields};
+    use crate::types::{Deck, Card, CardFields, Keywords::*};
     use crate::types::*;
 
     use super::basic::Cardtype;
@@ -660,25 +660,51 @@ pub mod archetype {
                 Archetype::Wheel => {return vec!["each player".to_string(), "then draw".to_string()]}, 
                 Archetype::Lifegain => {return vec!["you gain life".to_string()]},
                 Archetype::Mill => {return vec!["opponent".to_string(), "put".to_string(), "card".to_string()]},
-                Archetype::Tokens => {return vec!["when".to_string(), "token".to_string()]}, //not quiet sure here where to recognize those strings
+                Archetype::Tokens => {return vec!["would".to_string(), "create".to_string(),"token".to_string()]}, //not quiet sure here where to recognize those strings
                 Archetype::Voltron => {return vec!["".to_string()]}, // no idea whats the common support text for Voltron decks
                 Archetype::Counters => {return vec!["counter".to_string(), "would".to_string(), "placed".to_string()]},
                 Archetype::SuperFriends => {return vec!["activate".to_string(), "abilities".to_string()]},
                 Archetype::Aristocrats => {return vec!["whenever".to_string(), "die".to_string() ]},
                 Archetype::Artifacts => {return vec!["artifact".to_string()]},
                 Archetype::Tribal => {return vec!["whenever a".to_string()]},
-                Archetype::Graveyard => {return vec!["return".to_string(),"graveyard".to_string(), "battlefield".to_string() ]},
+                Archetype::Graveyard => {return vec!["return".to_string(),"graveyard".to_string(), "from".to_string()]},
                 Archetype::Toolbox => {return vec!["".to_string()]},
-                Archetype::Combat => {return vec!["another".to_string(), "combat".to_string()]},
+                Archetype::Combat => {return vec!["whenever".to_string(), "combat".to_string()]},
                 Archetype::Discard => {return vec!["opponent".to_string(), "discard".to_string()]},
                 Archetype::Controle => {return vec!["whenever".to_string(), "you".to_string(), "counter".to_string()]},
             } 
         }
+        // Connecting keywords on cards with specific strategie gaining advantage from those keywords
+        pub fn to_keywords(&self) -> Vec<Keywords> {
+            
+            match self {
+                Archetype::Flicker => {return vec![Manifest, Morph]},
+                Archetype::Storm => {return vec![Storm, Magecraft, Prowess, Buyback, Flash, Cascade, Jump_Start]},
+                Archetype::Enchantments => {return vec![Affinity, Attach]}, 
+                Archetype::Pod => {return vec![Tap, Untap]},
+                Archetype::LandsMatter => {return vec![Landfall, Retrace]},
+                Archetype::Wheel => {return vec![Treshold, Madness, Delve, Jump_Start]},
+                Archetype::Lifegain => {return vec![Lifelink, Extort]},
+                Archetype::Mill => {return vec![Madness, Delve, Mill]},
+                Archetype::Tokens => {return vec![Convoke, Populate, Modular, Equip, Crew]},
+                Archetype::Voltron => {return vec![Exalted, Menace, Protection, Shroud, Hexproof, Equip, Attach, Bestow]},
+                Archetype::Counters => {return vec![Proliferate, Adapt]},
+                Archetype::SuperFriends => {return vec![Proliferate]},
+                Archetype::Aristocrats => {return vec![Devour, Afterlife, Echo, Persist, Exploit, Undying]},
+                Archetype::Artifacts => {return vec![Affinity, Metalcraft, Equip]},
+                Archetype::Tribal => {return vec![Conspire]},
+                Archetype::Graveyard => {return vec![Flashback, Echo, Unearth, Escape, Treshold, Persist, Regenerate, Dredge, Gravestorm, Jump_Start, Explore]},
+                Archetype::Toolbox => {return Vec::<Keywords>::new()}, //Toolbox is very difficult when looking for keywords...
+                Archetype::Combat => {return vec![Exalted, Menace, Shadow, Double_Strike, Deathtouch, Flying, Infect, Annihilator, Battle_Cry]},
+                Archetype::Discard => {return vec![Madness, Treshold, Flashback, Cycling, Delve, Dredge, Jump_Start]},
+                Archetype::Controle => {return vec![Magecraft, Surveil, Scry]},
+            }
+        }
     }
     #[derive(Debug)]
     pub struct Focus<'deck> {
-        archetype: Archetype,
-        cards: Vec<&'deck Card>,
+        pub archetype: Archetype,
+        pub cards: Vec<&'deck Card>,
     }
     
     impl Focus<'_> {
@@ -692,21 +718,13 @@ pub mod archetype {
 
     // here we try to figure out all possible options a commander could be build, from there we try to match out of the 99 which way (or none) the particular deck 
     // is build
-    pub fn from(deck: &Deck, sdeck: &Cardtype, basics: &crate::basic::Basic) {
+    pub fn from<'deck>(deck: &'deck Deck, sdeck: &Cardtype, basics: &crate::basic::Basic) -> Vec<Focus<'deck>>{
         println!("\nFor commander {:?} detected possible Archetypes", deck.commander);
-        for archtype in commander_theme(deck) {
-            println!("\n {:?}", &archtype);
-        }
+       
         let synergy = focus(deck, commander_theme(deck), basics);
         println!("Detected focus: ");
 
-        for focus in synergy {
-            println!("For focus {:?} found synergy: \n", focus.archetype);
-            for card in focus.cards {
-                println!("{}", card.name);
-            }
-        }
-
+        synergy
     }
     fn commander_theme(deck: &Deck) -> Vec<Archetype> { 
         let mut result = Vec::<Archetype>::new();
@@ -812,7 +830,7 @@ pub mod archetype {
         for archetype in archetypes {
             
             match link_to_archetype(archetype, &deck, basics) {
-                Some(results) => result.push(results),
+                Some(results) => result.push(archetype_to_keyword(results, &deck)),
                 None => (),
             }
        } 
@@ -866,6 +884,25 @@ pub mod archetype {
             return Some(Focus::new(archetype, buffer));
         }
         None
+    }
+    
+    fn archetype_to_keyword<'deck>(mut focus: Focus<'deck>, deck: &'deck Deck) -> Focus<'deck> {
+
+        for key in focus.archetype.to_keywords(){
+            for card in &deck.library {
+                let mut card_there = false;
+                if card.contains(key, CardFields::Keywords) {
+                    for piece in &focus.cards {
+                        if card.name == piece.name {card_there = true}
+                    }
+
+                    if !card_there {
+                        focus.cards.push(&card);
+                    }
+                }
+            }
+        }
+        focus
     }
 }
 
