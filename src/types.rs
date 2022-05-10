@@ -495,6 +495,18 @@ impl fmt::Display for Keys {
 }
 #[derive(Debug, Clone, Eq, PartialEq, EnumIter, Serialize, Deserialize, Copy)]
 pub enum Keywords{
+    Explore,
+    Surveil, 
+    Scry,
+    Populate,
+    Manifest,
+    Treshold,
+    Regenerate,
+    Adapt,
+    Metalcraft,
+    Discard,
+    Landfall,
+    Connive,
     Proliferate,
     Imprint,
     Deathtouch,
@@ -531,6 +543,7 @@ pub enum Keywords{
     Kicker,
     Flashback,
     Madness,
+    Magecraft,
     Fear,
     Morph,
     Amplify,
