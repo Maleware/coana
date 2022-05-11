@@ -858,9 +858,9 @@ pub mod archetype {
             // Drawing cards means you can counter more stuff... Sure, very weak indicator 
             if commander.contains(Keys::Draw, CardFields::Keys) { 
                 result.push(Archetype::Controle);
-                result.push(Archetype::Pod)
+                result.push(Archetype::Pod);
              }
-            if commander.contains(Restrictions::Get, Cardfields::Restrictions) {result.push(Archetype::Voltron)}
+            if commander.contains(Restrictions::Get, CardFields::Restrictions) {result.push(Archetype::Voltron)}
 
         }
 
