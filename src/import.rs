@@ -215,13 +215,13 @@ pub mod combo {
         let mut results: Vec<ComboResult> = Vec::new(); 
         let empty = String::from("");
 
-        for combo in &database { 
+        for combo in database { 
    
     
             // Unused combo slots in data frame are empty, therefore a maximum of 10 slots minus empty ones is num_pieces
             let mut unused = 0;
 
-            for elements in combo {
+            for elements in &combo {
                 if *elements == empty { unused += 1 }
             }
 
@@ -233,7 +233,7 @@ pub mod combo {
             for i in 1..=num_pieces {    
                 // looking through deck to fetch all available combos, take only combos which are completed therefore hit == num_pieces
                 for card in &deck.library {
-                    if card.name == combo[i] {
+                    if &card.name == &combo[i] {
                         hit += 1;
                     } 
                 }
@@ -244,10 +244,9 @@ pub mod combo {
                     }
                 }  
             }
-            // Clone is not so pretty, but database is just constructed during lifetime here and goes out of scope once iteration is done.
-            // Can't come up with something better yet
+        
             if hit == num_pieces { 
-                results.push(ComboResult::from(commander_combo_piece, combo.clone(), num_pieces))
+                results.push(ComboResult::from(commander_combo_piece, combo, num_pieces))
                 }
         }
 
