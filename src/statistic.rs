@@ -594,13 +594,16 @@ pub mod basic {
 pub mod archetype {
     //as long as under construction, remove if goes productive
     #![allow(dead_code)] #![allow(unused_variables)] #![allow(unused_imports)]
+    use std::collections::HashMap;
+
+    use crate::import::combo::ComboResult;
     use crate::types::{Deck, Card, CardFields, Keywords::*};
     use crate::types::*;
 
     use super::basic::Cardtype;
 
     #[derive(Debug)]
-    pub enum Archetype {
+    pub enum Archetype<'deck>{
         Flicker,
         Storm,
         Enchantments,
@@ -615,15 +618,16 @@ pub mod archetype {
         SuperFriends,
         Aristocrats,
         Artifacts,
-        Tribal, // Human, Treefolk etc.
+        Tribal(Option<&'deck Vec<CreatureSubtype>>),
         Graveyard,
         Toolbox,
         Combat,
         Discard,
         Controle,
+        Creature,
     }
 
-    impl Archetype {
+    impl Archetype<'_> {
         /*  Might not use it anyway. Just keep it for the Idea. */
         pub fn to_string(&self) -> String {
             match self {
@@ -641,12 +645,13 @@ pub mod archetype {
                 Archetype::SuperFriends => {return String::from("proliferate")},
                 Archetype::Aristocrats => {return String::from("sacrifice a creature")},
                 Archetype::Artifacts => {return String::from("artifact")},
-                Archetype::Tribal => {return String::from("for each other")},
+                Archetype::Tribal(_) => {return String::from("for each other")},
                 Archetype::Graveyard => {return String::from("to the battlefield")},
                 Archetype::Toolbox => {return String::from("search your library")},
                 Archetype::Combat => {return String::from("combat")},
                 Archetype::Discard => {return String::from("discard")},
                 Archetype::Controle => {return String::from("")}, //same here, strugle to find a wording which is not straight categorie counterspells or spell payoff
+                Archetype::Creature => {return String::from("creature")},
             }
         }
         // Experimental textblock recognition.... This might be very fruitful in the longrun, maybe we have to wirte some more to_oracle() functions 
@@ -671,7 +676,8 @@ pub mod archetype {
                 Archetype::Lifegain => {
                     return vec![vec!["you gain life".to_string()],
                     vec!["pay".to_string(), "life".to_string()],
-                    vec!["your".to_string(), "life".to_string(), "total".to_string()]]
+                    vec!["your".to_string(), "life".to_string(), "total".to_string()],
+                    vec!["you".to_string(), "loose".to_string(), "life".to_string()]]
                 },
                 Archetype::Mill => {
                     return vec![vec!["put".to_string(), "card".to_string(), "graveyard".to_string()],
@@ -694,7 +700,7 @@ pub mod archetype {
                     vec!["sacrifice".to_string(), "a".to_string(), "creature".to_string()]]
                 },
                 Archetype::Artifacts => {return vec![vec!["artifact".to_string()]]},
-                Archetype::Tribal => {
+                Archetype::Tribal(_) => {
                     return vec![vec!["each".to_string(), "creature".to_string()],
                     vec!["whenever".to_string(), "creature".to_string()]]
                 },
@@ -718,6 +724,9 @@ pub mod archetype {
                     vec!["you".to_string(), "draw".to_string(), "card".to_string()],
                     vec!["put".to_string(), "your".to_string(), "hand".to_string()]]
                 },
+                Archetype::Creature => {
+                    return vec![vec!["whenever".to_string(), "you".to_string(), "creature".to_string()]]
+                },
             } 
         }
         // Connecting keywords on cards with specific strategie gaining advantage from those keywords
@@ -738,28 +747,36 @@ pub mod archetype {
                 Archetype::SuperFriends => {return vec![Proliferate]},
                 Archetype::Aristocrats => {return vec![Devour, Afterlife, Echo, Persist, Exploit, Undying]},
                 Archetype::Artifacts => {return vec![Affinity, Metalcraft, Equip]},
-                Archetype::Tribal => {return vec![Conspire]},
+                Archetype::Tribal(_) => {return vec![Conspire]},
                 Archetype::Graveyard => {return vec![Flashback, Echo, Unearth, Escape, Treshold, Persist, Regenerate, Dredge, Gravestorm, Jump_Start, Explore]},
                 Archetype::Toolbox => {return Vec::<Keywords>::new()}, //Toolbox is very difficult when looking for keywords...
                 Archetype::Combat => {return vec![Exalted, Menace, Shadow, Double_Strike, Deathtouch, Flying, Infect, Annihilator, Battle_Cry]},
                 Archetype::Discard => {return vec![Madness, Treshold, Flashback, Cycling, Delve, Dredge, Jump_Start]},
                 Archetype::Controle => {return vec![Magecraft, Surveil, Scry]},
+                Archetype::Creature => {return vec![Convoke, Conspire]},
             }
         }
     }
     #[derive(Debug)]
     pub struct Focus<'deck> {
-        pub archetype: Archetype,
+        pub archetype: Archetype<'deck>,
         pub cards: Vec<&'deck Card>,
     }
     
-    impl Focus<'_> {
-        pub fn new<'deck>(archetype: Archetype, cards: Vec<&'deck Card>) -> Focus<'deck>{
+    impl<'deck> Focus<'deck> {
+        pub fn new (archetype: Archetype<'deck>, cards: Vec<&'deck Card>) -> Focus<'deck>{
             Focus {
                 archetype,
                 cards,
             }
         }
+        pub fn relevant_foci (&'deck self) -> Option<&'deck Archetype>  {
+        
+            if self.cards.len() >= 5 {
+                return Some(&self.archetype);
+            }
+            None  
+        } 
     }
 
     // here we try to figure out all possible options a commander could be build, from there we try to match out of the 99 which way (or none) the particular deck 
@@ -770,11 +787,6 @@ pub mod archetype {
     }
     fn commander_theme(deck: &Deck) -> Vec<Archetype> { 
         let mut result = Vec::<Archetype>::new();
-        
-        /* 
-            Actual missing things:
-            Pod
-        */
 
         for commander in &deck.commander { 
             match &commander.oracle_types {
@@ -813,8 +825,8 @@ pub mod archetype {
                                 }
                                 // if your commander is working with a kind of creature subtypes, it is technically possible to build a tribal deck
                                 match subtypes {
-                                    Some(_) => result.push(Archetype::Tribal),
-                                    None => (),
+                                    Some(subtype) => result.push(Archetype::Tribal(Some(subtype))),
+                                    None => {result.push(Archetype::Creature)},
                                 }
                                 
                             }, // can be a lot, further investigation
@@ -860,13 +872,14 @@ pub mod archetype {
                 result.push(Archetype::Controle);
                 result.push(Archetype::Pod);
              }
-            if commander.contains(Restrictions::Get, CardFields::Restrictions) {result.push(Archetype::Voltron)}
+            if commander.contains(Restrictions::Get, CardFields::Restrictions) 
+            && commander.contains(&commander.name, CardFields::OracleText){result.push(Archetype::Voltron)}
 
         }
 
         result 
     }
-    fn focus<'deck>(deck: &'deck Deck, archetypes: Vec<Archetype>, basics: &crate::basic::Basic) -> Vec<Focus<'deck>>{
+    fn focus<'deck>(deck: &'deck Deck, archetypes: Vec<Archetype<'deck>>, basics: &crate::basic::Basic) -> Vec<Focus<'deck>>{
         
         let mut result = Vec::<Focus>::new();
 
@@ -879,8 +892,20 @@ pub mod archetype {
        } 
        result
     }
-    fn consitency(deck: Deck) {}
-    fn link_to_archetype<'deck>(archetype: Archetype, deck:  &'deck Deck, basics: &crate::basic::Basic) -> Option<Focus<'deck>> {
+    // Figure out overlap between detected Archetypes and sort out irrelevant types (maybe len() < 5 => no relevance)
+    fn consistency<'deck>(deck: &Deck, foci: Vec<Focus>, combo: Vec<ComboResult>, tutor: HashMap<&'deck String, Vec<&'deck Card>>) {
+        
+        let mut relevant_foci = Vec::<&'deck Archetype<'deck>>::new();
+
+        for focus in &foci {
+            match focus.relevant_foci() {
+                Some(focus) => {relevant_foci.push(focus)},
+                None => (),
+            }
+        }
+        
+    }
+    fn link_to_archetype<'deck>(archetype: Archetype<'deck>, deck:  &'deck Deck, basics: &crate::basic::Basic) -> Option<Focus<'deck>> {
         
         
         let mut buffer = Vec::<&Card>::new();
