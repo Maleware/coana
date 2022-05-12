@@ -116,7 +116,7 @@ Badger,
 Barbarian,
 Bard,
 Basilisk,
-Bat,
+// Bat, Causing problems because of Zone Battlefield
 Bear,
 Beast,
 Beeble,
