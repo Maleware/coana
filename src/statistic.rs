@@ -762,8 +762,15 @@ pub mod archetype {
         pub archetype: Archetype<'deck>,
         pub cards: Vec<&'deck Card>,
     }
+
+    #[derive(Debug)]
+    pub struct Overlap<'deck> {
+        pub sorted_foci: Vec<Focus<'deck>>,
+        pub overlaps: Vec<u8>,
+    }
     
     impl<'deck> Focus<'deck> {
+
         pub fn new (archetype: Archetype<'deck>, cards: Vec<&'deck Card>) -> Focus<'deck>{
             Focus {
                 archetype,
@@ -780,6 +787,41 @@ pub mod archetype {
         pub fn sort_by_power(mut foci: Vec<Focus>) -> Vec<Focus> {
             foci.sort_by(|a,b| b.cards.len().cmp(&a.cards.len()));
             foci
+        }
+        pub fn overlaps(foci: Vec<Focus>) -> Overlap {
+            let mut relevant_foci = Vec::<&'deck Archetype<'deck>>::new();
+            let mut overlaps = Vec::<u8>::new();
+
+        
+
+            for focus in &foci {
+                match focus.relevant_foci() {
+                    Some(focus) => {relevant_foci.push(focus)},
+                    None => (),
+                }
+            }
+            let num_relevant_foci = relevant_foci.len();
+            // Sort by number of pieces s.t. most present focus is named first 
+            let sorted_foci = Focus::sort_by_power(foci);
+            
+            for i in 1..num_relevant_foci {
+                let mut overlap: u8 = 0;
+                for card1 in &sorted_foci[0].cards {
+                    for card2 in &sorted_foci[i].cards {
+                        if card1.name == card2.name {
+                            overlap += 1;
+                        }
+                    }
+                }
+                // First number is overlap main focus to second focus, second main focus to third focus...
+                overlaps.push(overlap);    
+            }
+            println!("\n");
+            
+            Overlap{
+                sorted_foci,
+                overlaps,
+            }
         }
     }
 
@@ -906,41 +948,16 @@ pub mod archetype {
     // Figure out overlap between detected Archetypes and sort out irrelevant types (maybe len() < 5 => no relevance)
     fn consistency<'deck>(deck: &Deck, foci: Vec<Focus>, combo: &Vec<ComboResult>, tutor: HashMap<&'deck String, Vec<&'deck Card>>) {
         
-        let mut relevant_foci = Vec::<&'deck Archetype<'deck>>::new();
-        let mut overlaps = Vec::<u8>::new();
-
-       
-
-        for focus in &foci {
-            match focus.relevant_foci() {
-                Some(focus) => {relevant_foci.push(focus)},
-                None => (),
-            }
-        }
-        let num_relevant_foci = relevant_foci.len();
-        // Sort by number of pieces s.t. most present focus is named first 
-        let sorted_foci = Focus::sort_by_power(foci);
-        
-        for i in 1..num_relevant_foci {
-            let mut overlap: u8 = 0;
-            for card1 in &sorted_foci[0].cards {
-                for card2 in &sorted_foci[i].cards {
-                    if card1.name == card2.name {
-                        overlap += 1;
-                    }
-                }
-            }
-            // First number is overlap main focus to second focus, second main focus to third focus...
-            overlaps.push(overlap);
-        }
+        let overlaps = Focus::overlaps(foci);
         println!("\n");
-        for focus in &sorted_foci {
+        
+        for focus in &overlaps.sorted_foci {
             println!("\nFor Focus: {:?} found cards: {}", focus.archetype, focus.cards.len());
             for card in &focus.cards {
                 println!("{}", card.name);
             }
         }
-        for over in overlaps{
+        for over in overlaps.overlaps{
             println!("Overlap main focus: {}", over);
         }
 
