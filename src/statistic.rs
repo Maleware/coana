@@ -949,6 +949,9 @@ pub mod archetype {
     fn consistency<'deck>(deck: &Deck, foci: Vec<Focus>, combo: &Vec<ComboResult>, tutor: HashMap<&'deck String, Vec<&'deck Card>>) {
         
         let overlaps = Focus::overlaps(foci);
+
+        
+        /**********************************************Just for pirinting stuff ************************************************************/
         println!("\n");
         
         for focus in &overlaps.sorted_foci {
@@ -1053,7 +1056,12 @@ pub mod tutor {
     use crate::types::{Card, Deck, *};
     use crate::statistic::basic;
 
-    pub fn tutor<'deck>(deck: &'deck Deck) -> HashMap<&'deck String, Vec<&'deck Card>> {
+    #[derive(Debug)]
+    pub struct Tutor<'deck> {
+        pub tutor: HashMap<&'deck String, Vec<&'deck Card>>
+    }
+
+    pub fn tutor<'deck>(deck: &'deck Deck) -> Tutor {
         let mut tutor: HashMap<&'deck String, Vec<&'deck Card>> = HashMap::new();
 
         //TODO: Just not pretty because combos get constructed twice. Need of doing it differently here, maybe pass through the sorted deck
@@ -1100,7 +1108,9 @@ pub mod tutor {
             } 
         }
         
-        tutor
+        Tutor{
+            tutor,
+        }
     }
     fn link_target<'deck>(tutor: &Card, deck: &'deck Deck, sdeck: &mut basic::Cardtype<'deck>, typ: &CardType) -> Vec<&'deck Card> {
         let mut targets: Vec<&'deck Card> = Vec::new();

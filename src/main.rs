@@ -1,6 +1,6 @@
 use std::{fs, io};
 use clap::{App, Arg};
-use crate::{types::{Deck, CEResult}, logic::{database, thread_fn::deck}, statistic::tutor};
+use crate::{types::{Deck, CEResult}, logic::{database}, statistic::tutor};
 use crate::statistic::basic;
 use crate::statistic::archetype;
 
@@ -203,14 +203,15 @@ fn main() {
                     println!("{}", fastmana.name);
                 }
                 println!("Tutorlinking: \n"); 
-                for (tutor,link) in tutors {
+                for (tutor,link) in &tutors.tutor {
                     println!("\n Targets for {} : \n", &tutor);
                     for card in link {
                         println!("{}",card.name);
                     }
                 }
-                
-                archetype::from(&t, &basics.cardtype, &basics); 
+
+                archetype::from(&t, &basics.cardtype, &basics,  tutors.tutor); 
+    
                 Deck::save(&t);  
             },
             Err(e) => println!("Error: {}", e),
