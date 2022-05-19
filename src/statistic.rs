@@ -827,7 +827,7 @@ pub mod archetype {
 
     // here we try to figure out all possible options a commander could be build, from there we try to match out of the 99 which way (or none) the particular deck 
     // is build
-    pub fn from<'deck>(deck: &'deck Deck, sdeck: &Cardtype, basics: &crate::basic::Basic, tutor: HashMap<&'deck String, Vec<&'deck Card>>) /* -> Vec<Focus<'deck>>*/{  
+    pub fn from<'deck>(deck: &'deck Deck, sdeck: &Cardtype, basics: &crate::basic::Basic, tutor: crate::tutor::Tutor) /* -> Vec<Focus<'deck>>*/{  
         let synergy = focus(deck, commander_theme(deck), basics);
         consistency(deck, synergy, &basics.combo , tutor);
     }
@@ -946,10 +946,17 @@ pub mod archetype {
        result
     }
     // Figure out overlap between detected Archetypes and sort out irrelevant types (maybe len() < 5 => no relevance)
-    fn consistency<'deck>(deck: &Deck, foci: Vec<Focus>, combo: &Vec<ComboResult>, tutor: HashMap<&'deck String, Vec<&'deck Card>>) {
+    fn consistency<'deck>(deck: &Deck, foci: Vec<Focus>, combos: &Vec<ComboResult>, tutor: crate::tutor::Tutor) {
         
         let overlaps = Focus::overlaps(foci);
+        let mut combo_tutor = Vec::<Vec<&String>>::new();
 
+        for combo in combos {
+            for piece in &combo.combo {
+                combo_tutor.push(tutor.contains(piece));
+            }
+
+        }
         
         /**********************************************Just for pirinting stuff ************************************************************/
         println!("\n");
@@ -962,6 +969,10 @@ pub mod archetype {
         }
         for over in overlaps.overlaps{
             println!("Overlap main focus: {}", over);
+        }
+
+        for combo in combo_tutor {
+            println!("{:?}", combo);
         }
 
         
@@ -1054,11 +1065,29 @@ pub mod tutor {
     use strum::IntoEnumIterator;
 
     use crate::types::{Card, Deck, *};
+
     use crate::statistic::basic;
 
     #[derive(Debug)]
     pub struct Tutor<'deck> {
         pub tutor: HashMap<&'deck String, Vec<&'deck Card>>
+    }
+
+    impl <'deck> Tutor<'deck>{
+        pub fn contains (&self, card: &'deck String) -> Vec<&'deck String>  {
+
+            let mut hits = Vec::<&'deck String>::new();
+
+            for (tutor, targets) in &self.tutor {
+                for target in targets {
+                    if card == &target.name {
+                        hits.push(*tutor);
+                    }
+                }
+            }
+            hits
+        }
+        
     }
 
     pub fn tutor<'deck>(deck: &'deck Deck) -> Tutor {
