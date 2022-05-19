@@ -210,7 +210,7 @@ fn main() {
                     }
                 }
 
-                archetype::from(&t, &basics.cardtype, &basics,  tutors.tutor); 
+                archetype::from(&t, &basics.cardtype, &basics,  tutors); 
     
                 Deck::save(&t);  
             },

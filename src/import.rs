@@ -189,7 +189,7 @@ pub mod combo {
     #[derive(Debug)]
     pub struct ComboResult {
         commander_combo_piece: bool,
-        combo: Vec<String>,
+        pub combo: Vec<String>,
         num_pieces: usize,
     }
 
