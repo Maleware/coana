@@ -602,7 +602,7 @@ pub mod archetype {
 
     use super::basic::Cardtype;
 
-    #[derive(Debug)]
+    #[derive(Debug, PartialEq, Eq)]
     pub enum Archetype<'deck>{
         Flicker,
         Storm,
@@ -777,13 +777,17 @@ pub mod archetype {
             }
             None  
         } 
+        pub fn sort_by_power(mut foci: Vec<Focus>) -> Vec<Focus> {
+            foci.sort_by(|a,b| b.cards.len().cmp(&a.cards.len()));
+            foci
+        }
     }
 
     // here we try to figure out all possible options a commander could be build, from there we try to match out of the 99 which way (or none) the particular deck 
     // is build
-    pub fn from<'deck>(deck: &'deck Deck, sdeck: &Cardtype, basics: &crate::basic::Basic) -> Vec<Focus<'deck>>{  
+    pub fn from<'deck>(deck: &'deck Deck, sdeck: &Cardtype, basics: &crate::basic::Basic, tutor: HashMap<&'deck String, Vec<&'deck Card>>) /* -> Vec<Focus<'deck>>*/{  
         let synergy = focus(deck, commander_theme(deck), basics);
-        synergy
+        consistency(deck, synergy, &basics.combo , tutor);
     }
     fn commander_theme(deck: &Deck) -> Vec<Archetype> { 
         let mut result = Vec::<Archetype>::new();
@@ -877,6 +881,13 @@ pub mod archetype {
 
         }
 
+        // it may happen that through overlapping keywords two identical archetypes are pushed. First observed with najeela
+        for i in 1..result.len() - 1  {
+            if &result[i] == &result[i-1] {
+                result.remove(i);
+            }
+        }
+
         result 
     }
     fn focus<'deck>(deck: &'deck Deck, archetypes: Vec<Archetype<'deck>>, basics: &crate::basic::Basic) -> Vec<Focus<'deck>>{
@@ -893,9 +904,12 @@ pub mod archetype {
        result
     }
     // Figure out overlap between detected Archetypes and sort out irrelevant types (maybe len() < 5 => no relevance)
-    fn consistency<'deck>(deck: &Deck, foci: Vec<Focus>, combo: Vec<ComboResult>, tutor: HashMap<&'deck String, Vec<&'deck Card>>) {
+    fn consistency<'deck>(deck: &Deck, foci: Vec<Focus>, combo: &Vec<ComboResult>, tutor: HashMap<&'deck String, Vec<&'deck Card>>) {
         
         let mut relevant_foci = Vec::<&'deck Archetype<'deck>>::new();
+        let mut overlaps = Vec::<u8>::new();
+
+       
 
         for focus in &foci {
             match focus.relevant_foci() {
@@ -903,6 +917,34 @@ pub mod archetype {
                 None => (),
             }
         }
+        let num_relevant_foci = relevant_foci.len();
+        // Sort by number of pieces s.t. most present focus is named first 
+        let sorted_foci = Focus::sort_by_power(foci);
+        
+        for i in 1..num_relevant_foci {
+            let mut overlap: u8 = 0;
+            for card1 in &sorted_foci[0].cards {
+                for card2 in &sorted_foci[i].cards {
+                    if card1.name == card2.name {
+                        overlap += 1;
+                    }
+                }
+            }
+            // First number is overlap main focus to second focus, second main focus to third focus...
+            overlaps.push(overlap);
+        }
+        println!("\n");
+        for focus in &sorted_foci {
+            println!("\nFor Focus: {:?} found cards: {}", focus.archetype, focus.cards.len());
+            for card in &focus.cards {
+                println!("{}", card.name);
+            }
+        }
+        for over in overlaps{
+            println!("Overlap main focus: {}", over);
+        }
+
+        
         
     }
     fn link_to_archetype<'deck>(archetype: Archetype<'deck>, deck:  &'deck Deck, basics: &crate::basic::Basic) -> Option<Focus<'deck>> {
@@ -1067,7 +1109,7 @@ pub mod tutor {
                 if tutor.contains(Keys::With, CardFields::Keys)
                 && !((tutor.contains(Keys::Exile, CardFields::Keys) && !tutor.contains(&tutor.name, CardFields::OracleText))
                     || tutor.contains(Keys::Token, CardFields::Keys)
-                    || (tutor.contains(Keys::Counter, CardFields::Keys) && tutor.name != String::from("Neoform"))) { 
+                    || (tutor.contains(Keys::Counter, CardFields::Keys) && tutor.name != String::from("Neoform") && tutor.name != String::from("Eldritch Evolution"))) { 
                     targets.append(&mut restrictions(deck, tutor, sdeck, CardType::Creature(None)));
                 } else {
                     if !(tutor.contains(Keys::Exile, CardFields::Keys) 
