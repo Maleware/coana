@@ -597,10 +597,11 @@ pub mod archetype {
     use std::collections::HashMap;
 
     use crate::import::combo::ComboResult;
+    use crate::statistic::basic;
     use crate::types::{Deck, Card, CardFields, Keywords::*};
     use crate::types::*;
 
-    use super::basic::Cardtype;
+    use super::basic::{Cardtype, Effect};
 
     #[derive(Debug, PartialEq, Eq)]
     pub enum Archetype<'deck>{
@@ -823,13 +824,31 @@ pub mod archetype {
                 overlaps,
             }
         }
+        pub fn payoff_focus(overlap: &Overlap, effect: &'deck Effect, num: usize) -> Vec<&'deck Card> {
+            
+            let mut focus_payoff = Vec::<&Card>::new();
+
+            if num < overlap.sorted_foci.len() {
+                for card in &overlap.sorted_foci[num].cards {
+                    for payoff in &effect.payoff {
+                        if card.name == payoff.name {
+                            focus_payoff.push(payoff);
+                        }
+                    }
+                }
+            }
+            focus_payoff
+        }
     }
 
+    pub struct Consistency {}
+
+    impl Consistency {}
     // here we try to figure out all possible options a commander could be build, from there we try to match out of the 99 which way (or none) the particular deck 
     // is build
     pub fn from<'deck>(deck: &'deck Deck, sdeck: &Cardtype, basics: &crate::basic::Basic, tutor: crate::tutor::Tutor) /* -> Vec<Focus<'deck>>*/{  
         let synergy = focus(deck, commander_theme(deck), basics);
-        consistency(deck, synergy, &basics.combo , tutor);
+        consistency(deck, synergy, &basics.combo ,basics, tutor);
     }
     fn commander_theme(deck: &Deck) -> Vec<Archetype> { 
         let mut result = Vec::<Archetype>::new();
@@ -946,17 +965,14 @@ pub mod archetype {
        result
     }
     // Figure out overlap between detected Archetypes and sort out irrelevant types (maybe len() < 5 => no relevance)
-    fn consistency<'deck>(deck: &Deck, foci: Vec<Focus>, combos: &Vec<ComboResult>, tutor: crate::tutor::Tutor) {
-        
+    fn consistency<'deck>(deck: &Deck, foci: Vec<Focus>, combos: &Vec<ComboResult>, basics: &basic::Basic ,tutor: crate::tutor::Tutor) -> Consistency {
+
         let overlaps = Focus::overlaps(foci);
-        let mut combo_tutor = Vec::<Vec<&String>>::new();
+        // gives back tutor names targeting combopieces in the same order as ComboResult
+        let combo_tutor = tutor.from_combo(&combos);
 
-        for combo in combos {
-            for piece in &combo.combo {
-                combo_tutor.push(tutor.contains(piece));
-            }
-
-        }
+        let main_focus_payoff = Focus::payoff_focus(&overlaps, &basics.effect, 0);
+        let secondary_focus_payoff = Focus::payoff_focus(&overlaps, &basics.effect, 1);
         
         /**********************************************Just for pirinting stuff ************************************************************/
         println!("\n");
@@ -975,7 +991,17 @@ pub mod archetype {
             println!("{:?}", combo);
         }
 
-        
+        println!("\n Payoffs for main focus:");
+        for payoff in main_focus_payoff {
+            println!("{:?}", payoff.name);
+        }
+
+        println!("\n Payoffs for secondary focus:");
+        for payoff in secondary_focus_payoff {
+            println!("{:?}", payoff.name);
+        }
+
+        Consistency {  }        
         
     }
     fn link_to_archetype<'deck>(archetype: Archetype<'deck>, deck:  &'deck Deck, basics: &crate::basic::Basic) -> Option<Focus<'deck>> {
@@ -1074,7 +1100,7 @@ pub mod tutor {
     }
 
     impl <'deck> Tutor<'deck>{
-        pub fn contains (&self, card: &'deck String) -> Vec<&'deck String>  {
+        pub fn contains(&self, card: &'deck String) -> Vec<&'deck String>  {
 
             let mut hits = Vec::<&'deck String>::new();
 
@@ -1086,6 +1112,24 @@ pub mod tutor {
                 }
             }
             hits
+        }
+        pub fn from_combo(&self, combos: &'deck Vec<crate::import::combo::ComboResult>) -> Vec<Vec<&'deck String>> {
+            let mut combo_tutor = Vec::<Vec<&String>>::new();
+
+            for combo in combos {
+                let mut buffer = Vec::<&String>::new();
+                for piece in &combo.combo {    
+                    if piece != &"".to_string() {
+                        for hit in self.contains(piece) {
+                            if hit != &"".to_string() {
+                                buffer.push(hit);
+                            }
+                        }
+                    }
+                }
+                combo_tutor.push(buffer);
+            }
+            combo_tutor
         }
         
     }
