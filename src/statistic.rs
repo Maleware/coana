@@ -879,9 +879,10 @@ pub mod archetype {
     }
     // here we try to figure out all possible options a commander could be build, from there we try to match out of the 99 which way (or none) the particular deck 
     // is build
-    pub fn from<'deck>(deck: &'deck Deck, sdeck: &Cardtype, basics: &crate::basic::Basic, tutor: crate::tutor::Tutor) {  
+    pub fn from<'deck>(deck: &'deck Deck, basics: &'deck crate::basic::Basic, tutor: crate::tutor::Tutor<'deck>) -> Consistency<'deck>{  
         let synergy = focus(deck, commander_theme(deck), basics);
-        consistency(deck, synergy, &basics.combo ,basics, tutor).println();
+        
+        consistency(deck, synergy, &basics.combo ,basics, tutor)
     }
     fn commander_theme(deck: &Deck) -> Vec<Archetype> { 
         let mut result = Vec::<Archetype>::new();
@@ -1007,10 +1008,6 @@ pub mod archetype {
         let main_focus_payoff = Focus::payoff_focus(&overlaps, &basics.effect, 0);
         let second_focus_payoff = Focus::payoff_focus(&overlaps, &basics.effect, 1);
         
-
-
-       
-
         Consistency{overlaps, combo_tutor, main_focus_payoff, second_focus_payoff}        
         
     }
