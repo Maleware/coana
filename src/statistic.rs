@@ -841,9 +841,42 @@ pub mod archetype {
         }
     }
 
-    pub struct Consistency {}
+    pub struct Consistency<'deck> {
+        overlaps: Overlap<'deck>,
+        combo_tutor: Vec<Vec<&'deck String>>,
+        main_focus_payoff: Vec<&'deck Card>,
+        second_focus_payoff: Vec<&'deck Card>
+    }
 
-    impl Consistency {}
+    impl Consistency<'_> {
+        pub fn println(&self) {
+            println!("\n");
+        
+            for focus in &self.overlaps.sorted_foci {
+                println!("\nFor Focus: {:?} found cards: {}", focus.archetype, focus.cards.len());
+                for card in &focus.cards {
+                    println!("{}", card.name);
+                }
+            }
+            for over in &self.overlaps.overlaps{
+                println!("Overlap main focus: {}", over);
+            }
+    
+            for combo in &self.combo_tutor {
+                println!("{:?}", combo);
+            }
+    
+            println!("\n Payoffs for main focus:");
+            for payoff in &self.main_focus_payoff {
+                println!("{:?}", payoff.name);
+            }
+    
+            println!("\n Payoffs for secondary focus:");
+            for payoff in &self.second_focus_payoff {
+                println!("{:?}", payoff.name);
+            }
+        }
+    }
     // here we try to figure out all possible options a commander could be build, from there we try to match out of the 99 which way (or none) the particular deck 
     // is build
     pub fn from<'deck>(deck: &'deck Deck, sdeck: &Cardtype, basics: &crate::basic::Basic, tutor: crate::tutor::Tutor) /* -> Vec<Focus<'deck>>*/{  
@@ -965,43 +998,20 @@ pub mod archetype {
        result
     }
     // Figure out overlap between detected Archetypes and sort out irrelevant types (maybe len() < 5 => no relevance)
-    fn consistency<'deck>(deck: &Deck, foci: Vec<Focus>, combos: &Vec<ComboResult>, basics: &basic::Basic ,tutor: crate::tutor::Tutor) -> Consistency {
+    fn consistency<'deck>(deck: &'deck Deck, foci: Vec<Focus<'deck>>, combos: &'deck Vec<ComboResult>, basics: &'deck basic::Basic ,tutor: crate::tutor::Tutor<'deck>) -> Consistency<'deck> {
 
         let overlaps = Focus::overlaps(foci);
         // gives back tutor names targeting combopieces in the same order as ComboResult
         let combo_tutor = tutor.from_combo(&combos);
-
+        // Find payoffs fitting to the focus (TODO: overlap can offer value)
         let main_focus_payoff = Focus::payoff_focus(&overlaps, &basics.effect, 0);
-        let secondary_focus_payoff = Focus::payoff_focus(&overlaps, &basics.effect, 1);
+        let second_focus_payoff = Focus::payoff_focus(&overlaps, &basics.effect, 1);
         
+
         /**********************************************Just for pirinting stuff ************************************************************/
-        println!("\n");
-        
-        for focus in &overlaps.sorted_foci {
-            println!("\nFor Focus: {:?} found cards: {}", focus.archetype, focus.cards.len());
-            for card in &focus.cards {
-                println!("{}", card.name);
-            }
-        }
-        for over in overlaps.overlaps{
-            println!("Overlap main focus: {}", over);
-        }
+       
 
-        for combo in combo_tutor {
-            println!("{:?}", combo);
-        }
-
-        println!("\n Payoffs for main focus:");
-        for payoff in main_focus_payoff {
-            println!("{:?}", payoff.name);
-        }
-
-        println!("\n Payoffs for secondary focus:");
-        for payoff in secondary_focus_payoff {
-            println!("{:?}", payoff.name);
-        }
-
-        Consistency {  }        
+        Consistency{overlaps, combo_tutor, main_focus_payoff, second_focus_payoff}        
         
     }
     fn link_to_archetype<'deck>(archetype: Archetype<'deck>, deck:  &'deck Deck, basics: &crate::basic::Basic) -> Option<Focus<'deck>> {
