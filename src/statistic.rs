@@ -880,9 +880,8 @@ pub mod archetype {
     // here we try to figure out all possible options a commander could be build, from there we try to match out of the 99 which way (or none) the particular deck 
     // is build
     pub fn from<'deck>(deck: &'deck Deck, basics: &'deck crate::basic::Basic, tutor: crate::tutor::Tutor<'deck>) -> Consistency<'deck>{  
-        let synergy = focus(deck, commander_theme(deck), basics);
         
-        consistency(deck, synergy, &basics.combo ,basics, tutor)
+        consistency(deck, focus(deck, commander_theme(deck), basics), &basics.combo ,basics, tutor)
     }
     fn commander_theme(deck: &Deck) -> Vec<Archetype> { 
         let mut result = Vec::<Archetype>::new();
