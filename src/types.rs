@@ -116,7 +116,7 @@ Badger,
 Barbarian,
 Bard,
 Basilisk,
-// Bat, Causing problems because of Zone Battlefield
+Bat,
 Bear,
 Beast,
 Beeble,
@@ -987,7 +987,7 @@ impl Card {
 
             ),
             CardFields::OracleText=> {
-                if self.oracle_text.to_lowercase().contains(&search.to_string()) {
+                if self.oracle_text.to_lowercase().contains(&search.to_string().to_lowercase()) {
                     return true;
                 }
                 return false;
