@@ -307,7 +307,7 @@ pub mod card_build {
         let mut landdetect = false;
 
         for types in CardType::iter() {
-            if input.to_string().to_lowercase().contains(&types.to_string().to_lowercase()) {
+            if input.to_lowercase().contains(&types.to_string().to_lowercase()) {
                 buffer.push(types);
             }
         }
