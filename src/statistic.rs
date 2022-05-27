@@ -701,11 +701,11 @@ pub mod archetype {
 
 
     use crate::import::combo::ComboResult;
-    use crate::statistic::basic;
     use crate::types::{Deck, Card, CardFields, Keywords::*};
     use crate::types::*;
 
-    use super::basic::{Effect};
+    use super::basic::{Effect, Basic};
+    use super::tutor::Tutor;
 
     #[derive(Debug, PartialEq, Eq)]
     pub enum Archetype<'deck>{
@@ -989,7 +989,7 @@ pub mod archetype {
     }
     // here we try to figure out all possible options a commander could be build, from there we try to match out of the 99 which way (or none) the particular deck 
     // is build
-    pub fn from<'deck>(deck: &'deck Deck, basics: &'deck crate::basic::Basic, tutor: crate::tutor::Tutor<'deck>) -> Consistency<'deck>{  
+    pub fn from<'deck>(deck: &'deck Deck, basics: &'deck Basic, tutor: crate::tutor::Tutor<'deck>) -> Consistency<'deck>{  
         
         consistency(focus(deck, commander_theme(deck), basics), &basics.combo ,basics, tutor)
     }
@@ -1104,7 +1104,7 @@ pub mod archetype {
 
         result 
     }
-    fn focus<'deck>(deck: &'deck Deck, archetypes: Vec<Archetype<'deck>>, basics: &crate::basic::Basic) -> Vec<Focus<'deck>>{
+    fn focus<'deck>(deck: &'deck Deck, archetypes: Vec<Archetype<'deck>>, basics: &Basic) -> Vec<Focus<'deck>>{
         
         let mut result = Vec::<Focus>::new();
 
@@ -1118,7 +1118,7 @@ pub mod archetype {
        result
     }
     // Figure out overlap between detected Archetypes and sort out irrelevant types (maybe len() < 5 => no relevance)
-    fn consistency<'deck>(foci: Vec<Focus<'deck>>, combos: &'deck Vec<ComboResult>, basics: &'deck basic::Basic ,tutor: crate::tutor::Tutor<'deck>) -> Consistency<'deck> {
+    fn consistency<'deck>(foci: Vec<Focus<'deck>>, combos: &'deck Vec<ComboResult>, basics: &'deck Basic ,tutor: crate::tutor::Tutor<'deck>) -> Consistency<'deck> {
 
         let overlaps = Focus::overlaps(foci);
         // gives back tutor names targeting combopieces in the same order as ComboResult
@@ -1130,7 +1130,7 @@ pub mod archetype {
         Consistency{overlaps, combo_tutor, main_focus_payoff, second_focus_payoff}        
         
     }
-    fn link_to_archetype<'deck>(archetype: Archetype<'deck>, deck:  &'deck Deck, basics: &crate::basic::Basic) -> Option<Focus<'deck>> {
+    fn link_to_archetype<'deck>(archetype: Archetype<'deck>, deck:  &'deck Deck, basics: &Basic) -> Option<Focus<'deck>> {
         
         
         let mut buffer = Vec::<&Card>::new();
@@ -1210,6 +1210,11 @@ pub mod archetype {
         }
         focus
     }
+    fn manabase<'deck>(basics: &'deck Basic, tutors: Tutor){
+        
+        let mut power_fetches = tutors.power_fetches(basics);  
+        
+    }
 }
 
 pub mod tutor {
@@ -1219,6 +1224,8 @@ pub mod tutor {
     use crate::types::{Card, Deck, *};
 
     use crate::statistic::basic;
+
+    use super::basic::Basic;
 
     #[derive(Debug)]
     pub struct Tutor<'deck> {
@@ -1256,6 +1263,18 @@ pub mod tutor {
                 combo_tutor.push(buffer);
             }
             combo_tutor
+        }
+        pub fn power_fetches(&self, basics: &'deck Basic) -> Vec<(&'deck String, usize)> {
+            let mut power_fetches = Vec::<(&String, usize)>::new();
+
+            for (tutor, target) in &self.tutor {
+                for land in &basics.cardtype.lands {
+                    if **tutor == land.name {
+                        power_fetches.push((tutor, target.len()));
+                    }
+                } 
+            }
+            power_fetches    
         }
         
     }
