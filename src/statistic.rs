@@ -592,16 +592,14 @@ pub mod basic {
 
 // PCA suggested by Simon
 pub mod archetype {
-    //as long as under construction, remove if goes productive
-    #![allow(dead_code)] #![allow(unused_variables)] #![allow(unused_imports)]
-    use std::collections::HashMap;
+
 
     use crate::import::combo::ComboResult;
     use crate::statistic::basic;
     use crate::types::{Deck, Card, CardFields, Keywords::*};
     use crate::types::*;
 
-    use super::basic::{Cardtype, Effect};
+    use super::basic::{Effect};
 
     #[derive(Debug, PartialEq, Eq)]
     pub enum Archetype<'deck>{
@@ -881,7 +879,7 @@ pub mod archetype {
     // is build
     pub fn from<'deck>(deck: &'deck Deck, basics: &'deck crate::basic::Basic, tutor: crate::tutor::Tutor<'deck>) -> Consistency<'deck>{  
         
-        consistency(deck, focus(deck, commander_theme(deck), basics), &basics.combo ,basics, tutor)
+        consistency(focus(deck, commander_theme(deck), basics), &basics.combo ,basics, tutor)
     }
     fn commander_theme(deck: &Deck) -> Vec<Archetype> { 
         let mut result = Vec::<Archetype>::new();
@@ -972,6 +970,8 @@ pub mod archetype {
              }
             if commander.contains(Restrictions::Get, CardFields::Restrictions) 
             && commander.contains(&commander.name, CardFields::OracleText){result.push(Archetype::Voltron)}
+            if commander.contains(Keys::Discard, CardFields::Keys) 
+            || commander.contains(Keys::Draw, CardFields::Keys) {result.push(Archetype::Wheel)}
 
         }
 
@@ -998,7 +998,7 @@ pub mod archetype {
        result
     }
     // Figure out overlap between detected Archetypes and sort out irrelevant types (maybe len() < 5 => no relevance)
-    fn consistency<'deck>(deck: &'deck Deck, foci: Vec<Focus<'deck>>, combos: &'deck Vec<ComboResult>, basics: &'deck basic::Basic ,tutor: crate::tutor::Tutor<'deck>) -> Consistency<'deck> {
+    fn consistency<'deck>(foci: Vec<Focus<'deck>>, combos: &'deck Vec<ComboResult>, basics: &'deck basic::Basic ,tutor: crate::tutor::Tutor<'deck>) -> Consistency<'deck> {
 
         let overlaps = Focus::overlaps(foci);
         // gives back tutor names targeting combopieces in the same order as ComboResult
@@ -1370,7 +1370,8 @@ pub mod tutor {
                 || tutor.name == String::from("Scrapyard Recombiner")
                 // Falls somewhere through a rule, TODO: make it passing above rules 
                 || tutor.name == String::from("Diabolic Intent")
-                || tutor.name == String::from("Razaketh, the Foulblooded"){
+                || tutor.name == String::from("Razaketh, the Foulblooded") 
+                {
                     for card in &deck.library {    
                         if tutor.contains(Keys::NonLegendary, CardFields::Keys) {
                             if !card.legendary && card.name != tutor.name{
