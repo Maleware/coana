@@ -34,7 +34,7 @@ pub mod basic {
                 println!("------------------------------------------------------------");
                 println!("\n Found {} Combos", self.combo.len());
                 for combo in &self.combo{
-                    println!("Required Combopieces:");
+                    println!("\nRequired Combopieces: {}", combo.num_pieces);
                     for i in 1..=combo.num_pieces {
                         println!("{}", combo.combo[i]);
                     }
@@ -730,6 +730,7 @@ pub mod archetype {
         Discard,
         Controle,
         Creature,
+        Stax,
     }
 
     impl Archetype<'_> {
@@ -757,6 +758,7 @@ pub mod archetype {
                 Archetype::Discard => {return String::from("discard")},
                 Archetype::Controle => {return String::from("")}, //same here, strugle to find a wording which is not straight categorie counterspells or spell payoff
                 Archetype::Creature => {return String::from("creature")},
+                Archetype::Stax => {return String::from("can't")},
             }
         }
         // Experimental textblock recognition.... This might be very fruitful in the longrun, maybe we have to wirte some more to_oracle() functions 
@@ -832,6 +834,9 @@ pub mod archetype {
                 Archetype::Creature => {
                     return vec![vec!["whenever".to_string(), "you".to_string(), "creature".to_string()]]
                 },
+                Archetype::Stax => {
+                    return vec![vec!["opponent".to_string(), "can't".to_string()], vec!["player".to_string(), "can't".to_string()], vec!["can't".to_string(), "be".to_string()]]
+                }
             } 
         }
         // Connecting keywords on cards with specific strategie gaining advantage from those keywords
@@ -859,6 +864,7 @@ pub mod archetype {
                 Archetype::Discard => {return vec![Madness, Treshold, Flashback, Cycling, Delve, Dredge, Jump_Start]},
                 Archetype::Controle => {return vec![Magecraft, Surveil, Scry]},
                 Archetype::Creature => {return vec![Convoke, Conspire]},
+                Archetype::Stax => {return vec![]} //There are no real keywords for that...
             }
         }
     }
@@ -1074,10 +1080,18 @@ pub mod archetype {
                 result.push(Archetype::Controle);
                 result.push(Archetype::Pod);
              }
+            
             if commander.contains(Restrictions::Get, CardFields::Restrictions) 
             && commander.contains(&commander.name, CardFields::OracleText){result.push(Archetype::Voltron)}
+            
             if commander.contains(Keys::Discard, CardFields::Keys) 
             || commander.contains(Keys::Draw, CardFields::Keys) {result.push(Archetype::Wheel)}
+            
+            if commander.contains(Keys::Copy, CardFields::Keys) 
+            || commander.contains(Keys::Put, CardFields::Keys)
+            || commander.contains(Keys::Search, CardFields::Keys)
+            || commander.contains(CardType::Planeswalker, CardFields::CardType)
+            || commander.contains(Keys::Create, CardFields::Keys){ result.push(Archetype::Stax) }
 
         }
 
