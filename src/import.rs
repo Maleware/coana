@@ -190,7 +190,7 @@ pub mod combo {
     pub struct ComboResult {
         commander_combo_piece: bool,
         pub combo: Vec<String>,
-        num_pieces: usize,
+        pub num_pieces: usize,
     }
 
     impl ComboResult {

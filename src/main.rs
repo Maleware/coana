@@ -95,119 +95,16 @@ fn main() {
                 println!("Deck name: {}", t.name);
                 let basics = basic::Basic::new(&t);
                 let tutors = tutor::tutor(&t);
-                println!("Basic Statistics: ");
+                basics.println();
 
-                println!("\nCreatures: {}", &basics.cardtype.creatures.len());
-                for item in &basics.cardtype.creatures {
-                    println!("{}", item.name);
-                }
-                println!("\nArtifacts: {}", basics.cardtype.artifacts.len());
-                for item in &basics.cardtype.artifacts {
-                    println!("{}", item.name);
-                } 
-                println!("\nEnchantments: {}", basics.cardtype.enchantments.len());
-                for item in &basics.cardtype.enchantments {
-                    println!("{}", item.name);
-                } 
-                println!("\nLands: {}", basics.cardtype.lands.len());
-                for item in &basics.cardtype.lands {
-                    println!("{}", item.name);
-                } 
-                println!("\nInstants: {}", basics.cardtype.instants.len());
-                for item in &basics.cardtype.instants {
-                    println!("{}", item.name);
-                } 
-                println!("\nSorcerys: {}", basics.cardtype.sorcerys.len());
-                for item in &basics.cardtype.sorcerys {
-                    println!("{}", item.name);
-                }  
-                println!("\nPlaneswalkers: {} \n", basics.cardtype.planeswalkers.len());
-                for item in &basics.cardtype.planeswalkers {
-                    println!("{}", item.name);
-                }
-                for (key, card) in &basics.mana_cost {
-                    println!("Mana Cost: {} Number:{:?} \n", key, card.len());
-                }
-                for (colour, pips) in &basics.mana_dist.manacost {
-                    println!("Colour: {:?}, Pips: {}",colour,pips )
-                }
-                println!("\n");
-                for (colour, pips) in &basics.mana_dist.manaprod {
-                    println!("Colour: {:?}, Producing: {}", colour, pips);
-                }
 
-                println!("\nDorks:");
-                for dork in &basics.mana_dist.dorks {
-                    println!("{}", dork.name);
-                }
-                println!("\nArtifacts:");
-                for artifact in &basics.mana_dist.artifacts {
-                    println!("{}", artifact.name);
-                }
-                println!("\nEnchantment:");
-                for enchantment in &basics.mana_dist.enchantments {
-                    println!("{}", enchantment.name);
-                }
-                println!("\nLands:");
-                for land in &basics.mana_dist.lands {
-                    println!("{}", land.name);
-                }
-
-                println!("\nDraws:");
-                for draw in &basics.effect.draw {
-                    println!("{}", draw.name);
-                }
-                println!("\nBounce:");
-                for bounce in &basics.effect.bounce {
-                    println!("{}", bounce.name);
-                }
-                println!("\nRemoval:");
-                for removal in &basics.effect.removal {
-                    println!("{}", removal.name);
-                }  
-                println!("\nBoardwipe:");
-                for boardwipe in &basics.effect.boardwipe {
-                    println!("{}", boardwipe.name);
-                } 
-                println!("\nLord:");
-                for lord in &basics.effect.lord {
-                    println!("{}", lord.name);
-                } 
-                println!("\nCounter:");
-                for counter in &basics.effect.counter {
-                    println!("{}", counter.name);
-                } 
-                println!("\nPayoff:");
-                for payoff in &basics.effect.payoff {
-                    println!("{}", payoff.name);
-                } 
-                println!("\nRecursion:");
-                for recursion in &basics.effect.recursion {
-                    println!("{}", recursion.name);
-                } 
-                println!("\nReanimation:");
-                for rean in &basics.effect.reanimation {
-                    println!("{}", rean.name);
-                }
-                println!("\nStax:");
-                for stax in &basics.effect.stax {
-                    println!("{}", stax.name);
-                }
-                println!("\nFast Mana:");
-                for fastmana in &basics.effect.fastmana {
-                    println!("{}", fastmana.name);
-                }
+        
                 println!("Tutorlinking: \n"); 
                 for (tutor,link) in &tutors.tutor {
                     println!("\n Targets for {} : \n", &tutor);
                     for card in link {
                         println!("{}",card.name);
                     }
-                }
-
-                println!("\n Detected combos({}):", &basics.combo.len());
-                for combo in &basics.combo {
-                    println!("{:?}", *combo);
                 }
 
                 let consistency = archetype::from(&t, &basics,  tutors); 

@@ -15,6 +15,34 @@ pub mod basic {
         pub effect: Effect<'deck>,
         pub combo: Vec<ComboResult>,
     }
+
+    impl<'deck> Basic<'deck> {
+        pub fn println(&self) {
+            self.cardtype.println();
+            self.mana_dist.println();
+            self.effect.println();
+            
+            println!("------------------------------------------------------------");
+            println!("Manacost distribution:");
+            for (manacost, num) in &self.mana_cost {
+                println!("Manacost: {}, Number: {}", manacost, num.len());
+            }
+            println!("------------------------------------------------------------");
+
+           
+            if self.combo.len() != 0 {
+                println!("------------------------------------------------------------");
+                println!("\n Found {} Combos", self.combo.len());
+                for combo in &self.combo{
+                    println!("Required Combopieces:");
+                    for i in 1..=combo.num_pieces {
+                        println!("{}", combo.combo[i]);
+                    }
+                }
+                println!("------------------------------------------------------------");
+            }
+        }
+    }
     //TODO: Think about a place to construct combo other than basic, since this leads to two times construction due to tutor making
     impl <'deck> Basic<'deck> {
         pub fn new(deck: &Deck) -> Basic {
@@ -37,6 +65,32 @@ pub mod basic {
         pub instants: Vec<&'deck Card>,
         pub sorcerys: Vec<&'deck Card>,
     }
+    impl <'deck> Cardtype<'deck>{
+        pub fn println(&self) {
+            println!("------------------------------------------------------------");
+            println!("Your Deck listed by types:");
+            println!("\n Creatures({}):", self.creatures.len());
+            Cardtype::printout(&self.creatures);
+            println!("\n Enchantments({}):", self.enchantments.len());
+            Cardtype::printout(&self.enchantments);
+            println!("\n Artifacts({})", self.artifacts.len());
+            Cardtype::printout(&self.artifacts);
+            println!("\n Planeswalkers({}):", self.planeswalkers.len());
+            Cardtype::printout(&self.planeswalkers);
+            println!("\n Instants({}):", self.instants.len());
+            Cardtype::printout(&self.instants);
+            println!("\n Sorcerys({}):", self.sorcerys.len());
+            Cardtype::printout(&self.sorcerys);
+            println!("\n Lands({}): ", self.lands.len());
+            Cardtype::printout(&self.lands);
+            println!("------------------------------------------------------------");
+        }
+        fn printout(cards: &Vec<&'deck Card>) {
+            for card in cards {
+                println!("{}", card.name);
+            }
+        }
+    }
     #[derive(Debug)]
     pub struct ManaDist<'deck> {
         pub manacost: HashMap<Colors, u8>,
@@ -45,6 +99,23 @@ pub mod basic {
         pub artifacts: Vec<&'deck Card>,
         pub enchantments: Vec<&'deck Card>,
         pub lands: Vec<&'deck Card>,
+    }
+
+    impl<'deck> ManaDist<'deck> {
+        pub fn println(&self) {
+            println!("------------------------------------------------------------");
+            println!("Manadistribution by Pips: ");
+            for (color, num) in &self.manacost {
+                println!("For {} found pips: {}", color, num);
+            }
+            println!("Manaproducer by Pips: "); 
+            for (color, num) in &self.manaprod {
+                println!("For {} found producer: {}", color, num);
+            }
+            println!("Ramp:{}", (self.dorks.len()+self.artifacts.len()+self.enchantments.len()));
+            println!("Distributed with Dorks({}), Artifacts({}) and Enchantments({})", self.dorks.len(), self.artifacts.len(), self.enchantments.len());
+            println!("------------------------------------------------------------");
+        }
     }
     #[derive(Debug)]
     pub struct Effect<'deck> {
@@ -60,6 +131,41 @@ pub mod basic {
         pub stax: Vec<&'deck Card>,
         pub fastmana: Vec<&'deck Card>,
         
+    }
+
+    impl<'deck> Effect<'deck> {
+        pub fn println(&self) {
+            println!("------------------------------------------------------------");
+            println!("Your Deck, seperated by effects of your 99: ");
+            println!("\n Your draws({}): ", self.draw.len());
+            Effect::printout(&self.draw);
+            println!("\n Bounce-Spells({}): ", self.bounce.len());
+            Effect::printout(&self.bounce);
+            println!("\n Single target removal({}): ", self.removal.len());
+            Effect::printout(&self.removal);
+            println!("\n Boardwipes:({})", self.boardwipe.len());
+            Effect::printout(&self.boardwipe);
+            println!("\n Your buff effects({}): ", self.lord.len());
+            Effect::printout(&self.lord);
+            println!("\n Counterspells({}):", self.counter.len());
+            Effect::printout(&self.counter);
+            println!("\n Payoffs({}):", self.payoff.len());
+            Effect::printout(&self.payoff);
+            println!("\n Recursion({}):", self.recursion.len());
+            Effect::printout(&self.recursion);
+            println!("\n Reanimator-Spells({}):", self.reanimation.len());
+            Effect::printout(&self.reanimation);
+            println!("\n Stax({}): ", self.stax.len());
+            Effect::printout(&self.stax);
+            println!("\n Fast-Mana({}):", self.fastmana.len());
+            Effect::printout(&self.fastmana);
+            println!("------------------------------------------------------------");
+        }
+        fn printout(cards: &Vec<&'deck Card>) {
+            for card in cards {
+                println!("{}", card.name);
+            }
+        } 
     }
 
     pub fn cardtype<'deck> (deck: &'deck Deck) -> Cardtype<'deck> {
@@ -2192,4 +2298,10 @@ pub mod tutor {
     }
 }
 /****************************************** Eval Powerlevel **************************************************/
-pub mod powerlevel {}
+pub mod powerlevel {
+    pub struct Powerlevel {
+        score: u8,
+    }
+    
+    impl Powerlevel {}
+}
