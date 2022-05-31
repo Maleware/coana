@@ -299,17 +299,11 @@ pub mod basic {
                     },
                     None => (),
                 }
-            }
-            // Landramp including searching your library
-            if (card.contains(Keys::Search, CardFields::Keys) 
-            && card.contains(CardType::Land(None), CardFields::OracleType)
-            && card.contains(Zones::Library, CardFields::Zones) && card.contains(Zones::Battlefield, CardFields::Zones)
-            && !card.contains(CardType::Land(None), CardFields::CardType)
-            && !card.contains(CardType::Instant(None), CardFields::CardType) )
+            } 
             // Play additional Lands effects
-            || (card.contains(Keys::Additional, CardFields::Keys,) 
-                && card.contains(CardType::Land(None), CardFields::OracleType) 
-                && card.contains(Keys::Turns, CardFields::Keys) ) {
+            if card.contains(Keys::Additional, CardFields::Keys,) 
+            && card.contains(CardType::Land(None), CardFields::OracleType) 
+            && card.contains(Keys::Turns, CardFields::Keys) {
                 lands.push(card);
             }
             // Untap lands for dorks
@@ -734,7 +728,7 @@ pub mod archetype {
     }
 
     impl Archetype<'_> {
-        /*  Might not use it anyway. Just keep it for the Idea. */
+        /*  Might not use it anyway. Just keep it for the Idea. 
         pub fn to_string(&self) -> String {
             match self {
                 Archetype::Flicker => {return String::from("exile target")},
@@ -760,7 +754,7 @@ pub mod archetype {
                 Archetype::Creature => {return String::from("creature")},
                 Archetype::Stax => {return String::from("can't")},
             }
-        }
+        } */
         // Experimental textblock recognition.... This might be very fruitful in the longrun, maybe we have to wirte some more to_oracle() functions 
         pub fn to_oracle(&self) -> Vec<Vec<String>> {
             match self {
@@ -1211,11 +1205,9 @@ pub mod archetype {
         focus
     }
     fn manabase<'deck>(basics: &'deck Basic, tutors: Tutor){
-        
-        let mut power_fetches = tutors.power_fetches(basics);  
-        
+
+        }
     }
-}
 
 pub mod tutor {
     use std::{collections::HashMap};
@@ -1225,11 +1217,11 @@ pub mod tutor {
 
     use crate::statistic::basic;
 
-    use super::basic::Basic;
-
     #[derive(Debug)]
     pub struct Tutor<'deck> {
-        pub tutor: HashMap<&'deck String, Vec<&'deck Card>>
+        pub tutor: HashMap<&'deck String, Vec<&'deck Card>>,
+        pub fetches: HashMap<&'deck String, Vec<&'deck Card>>,
+        pub landramp: HashMap<&'deck String, Vec<&'deck Card>>,
     }
 
     impl <'deck> Tutor<'deck>{
@@ -1263,24 +1255,14 @@ pub mod tutor {
                 combo_tutor.push(buffer);
             }
             combo_tutor
-        }
-        pub fn power_fetches(&self, basics: &'deck Basic) -> Vec<(&'deck String, usize)> {
-            let mut power_fetches = Vec::<(&String, usize)>::new();
-
-            for (tutor, target) in &self.tutor {
-                for land in &basics.cardtype.lands {
-                    if **tutor == land.name {
-                        power_fetches.push((tutor, target.len()));
-                    }
-                } 
-            }
-            power_fetches    
-        }
+        } 
         
     }
 
     pub fn tutor<'deck>(deck: &'deck Deck) -> Tutor {
         let mut tutor: HashMap<&'deck String, Vec<&'deck Card>> = HashMap::new();
+        let mut fetches: HashMap<&'deck String, Vec<&'deck Card>> = HashMap::new();
+        let mut landramp: HashMap<&'deck String, Vec<&'deck Card>> = HashMap::new();
 
         //TODO: Just not pretty because combos get constructed twice. Need of doing it differently here, maybe pass through the sorted deck
         let mut sdeck = basic::Basic::new(&deck).cardtype;
@@ -1303,7 +1285,16 @@ pub mod tutor {
                     },
                     None => (),
                 }
-                tutor.insert(&card.name, buffer);
+                if card.cardtype.contains(&CardType::Land(None)) {
+                    fetches.insert(&card.name, buffer);
+                } else if card.contains("Land", CardFields::OracleText)
+                || card.contains("Forest", CardFields::OracleText)
+                || card.contains("Basic", CardFields::OracleText)
+                {
+                    landramp.insert(&card.name, buffer);
+                } else {
+                    tutor.insert(&card.name, buffer);
+                }
             }
         }
         
@@ -1322,12 +1313,24 @@ pub mod tutor {
                     },
                     None => (),
                 }
-                tutor.insert(&card.name, buffer);
+                if card.cardtype.contains(&CardType::Land(None)) {
+                    fetches.insert(&card.name, buffer);
+                } else if (card.contains("Land", CardFields::OracleText)
+                || card.contains("Forest", CardFields::OracleText)
+                || card.contains("Basic", CardFields::OracleText))
+                && card.contains(Zones::Battlefield, CardFields::Zones)
+                {
+                    landramp.insert(&card.name, buffer);
+                } else {
+                    tutor.insert(&card.name, buffer);
+                }
             } 
         }
         
         Tutor{
             tutor,
+            fetches,
+            landramp,
         }
     }
     fn link_target<'deck>(tutor: &Card, deck: &'deck Deck, sdeck: &mut basic::Cardtype<'deck>, typ: &CardType) -> Vec<&'deck Card> {
@@ -2332,6 +2335,7 @@ pub mod tutor {
 }
 /****************************************** Eval Powerlevel **************************************************/
 pub mod powerlevel {
+    #[allow(dead_code, unused_variables)]
     pub struct Powerlevel {
         score: u8,
     }
