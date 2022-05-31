@@ -99,13 +99,28 @@ fn main() {
 
 
         
-                println!("Tutorlinking: \n"); 
+                println!("\n Tutorlinking: \n"); 
                 for (tutor,link) in &tutors.tutor {
                     println!("\n Targets for {} : \n", &tutor);
                     for card in link {
                         println!("{}",card.name);
                     }
                 }
+                println!("\n Fetches: \n");
+                for (fetch, link) in &tutors.fetches {
+                    println!("\n Targets for {}: \n", &fetch);
+                    for card in link {
+                        println!("{}", card.name);
+                    }
+                }
+                println!("\n Landramp: \n");
+                for (ramp, link) in &tutors.landramp {
+                    println!("\n Targets for {}: \n", &ramp);
+                    for card in link {
+                        println!("{}", card.name);
+                    }
+                }
+                
 
                 let consistency = archetype::from(&t, &basics,  tutors); 
                 
