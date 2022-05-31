@@ -113,7 +113,7 @@ pub mod basic {
                 println!("For {} found producer: {}", color, num);
             }
             println!("Ramp:{}", (self.dorks.len()+self.artifacts.len()+self.enchantments.len()));
-            println!("Distributed with Dorks({}), Artifacts({}) and Enchantments({})", self.dorks.len(), self.artifacts.len(), self.enchantments.len());
+            println!("Distributed with Dorks({}), Artifacts({}), Land Ramp({}) and Enchantments({})", self.dorks.len(), self.artifacts.len(), self.lands.len(), self.enchantments.len());
             println!("------------------------------------------------------------");
         }
     }
@@ -299,7 +299,16 @@ pub mod basic {
                     },
                     None => (),
                 }
-            } 
+            }
+            if card.contains("search", CardFields::OracleText) 
+            && (card.contains("Land", CardFields::OracleText)
+                || card.contains(CardType::Basic, CardFields::OracleType)
+                || card.contains("Forest", CardFields::OracleText) )
+            && card.contains(Zones::Battlefield, CardFields::Zones)
+            && !card.contains(CardType::Land(None), CardFields::CardType) 
+            && !card.contains(Keys::Destroy, CardFields::Keys){
+                lands.push(card);
+            }
             // Play additional Lands effects
             if card.contains(Keys::Additional, CardFields::Keys,) 
             && card.contains(CardType::Land(None), CardFields::OracleType) 
@@ -1285,7 +1294,8 @@ pub mod tutor {
                     },
                     None => (),
                 }
-                if card.cardtype.contains(&CardType::Land(None)) {
+                if card.cardtype.contains(&CardType::Land(None)) 
+                && card.contains(Zones::Battlefield, CardFields::Zones){
                     fetches.insert(&card.name, buffer);
                 } else if card.contains("Land", CardFields::OracleText)
                 || card.contains("Forest", CardFields::OracleText)
@@ -1313,7 +1323,8 @@ pub mod tutor {
                     },
                     None => (),
                 }
-                if card.cardtype.contains(&CardType::Land(None)) {
+                if card.cardtype.contains(&CardType::Land(None)) 
+                && card.contains(Zones::Battlefield, CardFields::Zones){
                     fetches.insert(&card.name, buffer);
                 } else if (card.contains("Land", CardFields::OracleText)
                 || card.contains("Forest", CardFields::OracleText)
