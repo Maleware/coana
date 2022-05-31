@@ -708,7 +708,6 @@ pub mod archetype {
     use crate::types::*;
 
     use super::basic::{Effect, Basic};
-    use super::tutor::Tutor;
 
     #[derive(Debug, PartialEq, Eq)]
     pub enum Archetype<'deck>{
@@ -1213,11 +1212,7 @@ pub mod archetype {
         }
         focus
     }
-    fn manabase<'deck>(basics: &'deck Basic, tutors: Tutor){
-
-        }
-    }
-
+}
 pub mod tutor {
     use std::{collections::HashMap};
     use strum::IntoEnumIterator;
@@ -1344,6 +1339,7 @@ pub mod tutor {
             landramp,
         }
     }
+    // There is a bug with the World Tree TODO: Make World tree only linking God-Cards
     fn link_target<'deck>(tutor: &Card, deck: &'deck Deck, sdeck: &mut basic::Cardtype<'deck>, typ: &CardType) -> Vec<&'deck Card> {
         let mut targets: Vec<&'deck Card> = Vec::new();
 
